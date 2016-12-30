@@ -55,7 +55,8 @@ void serialRead(byte& val){
 //Recursive PID update function
 void PID::update() {
   float input = serialRead();
-  byte sent = serialRead();
+  byte sent;
+  serialRead(sent);
   if(sent & 0b00000001 != 0) set_pt = serialRead();
   if(sent & 0b00000010 != 0) p = serialRead();
   if(sent & 0b00000100 != 0) i = serialRead();
