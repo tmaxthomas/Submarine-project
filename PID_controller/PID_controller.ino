@@ -13,7 +13,6 @@
 //Oh, and the values of the setpoint, p, i, and d can be changed at any point without actually having to send
 //them every cycle on the Mega, at the cost of one byte per transmission
 
-
 PID* head = NULL; //Keeps track of the head of the list of PID controllers
 
 //Creates all the PID controllers from data sent from the Mega. The idea here is that we only have to edit the Mega's code to change PID values-

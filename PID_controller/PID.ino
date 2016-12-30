@@ -31,14 +31,14 @@ void serialRead(byte& val){
 }
 
 //Recursive PID update function
-//The sent byte indicates which, if any, new valued for setpoint, p, i, and d have been sent, saving us the trouble
+//The sent byte indicates which, if any, new values for setpoint, p, i, and d have been sent, saving us the trouble
 //of going through the messy process of reading four additional floating-point values off the serial line every single clock cycle
 //for every single PID controller
 void PID::update() {
   float input = serialRead();
   byte sent;
   serialRead(sent);
-  if(sent & 0b00000001 != 0) set_pt = serialRead();
+  if(sent & 0b00000001 != 0) serialRead(set_pt);
   if(sent & 0b00000010 != 0) p = serialRead();
   if(sent & 0b00000100 != 0) i = serialRead();
   if(sent & 0b00001000 != 0) d = serialRead();
