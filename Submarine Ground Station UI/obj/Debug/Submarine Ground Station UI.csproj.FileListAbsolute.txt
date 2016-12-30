@@ -1,0 +1,9 @@
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\bin\Debug\Submarine Ground Station UI.exe.config
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\bin\Debug\Submarine Ground Station UI.exe
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\bin\Debug\Submarine Ground Station UI.pdb
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\obj\Debug\Submarine Ground Station UI.csprojResolveAssemblyReference.cache
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\obj\Debug\Submarine_Ground_Station_UI.Form1.resources
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\obj\Debug\Submarine_Ground_Station_UI.Properties.Resources.resources
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\obj\Debug\Submarine Ground Station UI.csproj.GenerateResource.Cache
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\obj\Debug\Submarine Ground Station UI.exe
+c:\users\max\documents\visual studio 2015\Projects\Submarine Ground Station UI\Submarine Ground Station UI\obj\Debug\Submarine Ground Station UI.pdb
