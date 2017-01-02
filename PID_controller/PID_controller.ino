@@ -1,4 +1,5 @@
 #include "PID.h"
+#include "Serial_addons.h"
 
 //A few notes on how this deivates from bog-standard PID:
 
@@ -22,12 +23,12 @@ void setup() {
   bool reading = true;
   PID* curr;
   while(reading){
-    float input = serialRead();
+    float input = serialReadFloat();
     float p, i, d;
     if(input != 0){
       p = input;
-      i = serialRead();
-      d = serialRead();
+      i = serialReadFloat();
+      d = serialReadFloat();
       if(!head){
         head = new PID(p, i, d);
         curr = head;

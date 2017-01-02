@@ -11,8 +11,4 @@ public:
   PID* next;
 };
 
-void serialWrite(float val);
-float serialRead();
-void serialRead(byte& val);
-
 #endif
