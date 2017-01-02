@@ -20,7 +20,7 @@ float serialReadFloat(){
   byte buf[4];                //Then screw around with void pointers and typecasting      
   Serial.readBytes(buf, 4);
   void* ptr = buf;
-  float* float_ptr = static_cast<float*>(ptr);
+  float* float_ptr = (float*)ptr;
   return *float_ptr;
 }
 
