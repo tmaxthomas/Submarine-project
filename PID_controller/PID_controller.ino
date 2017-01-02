@@ -19,7 +19,7 @@ PID* head = NULL; //Keeps track of the head of the list of PID controllers
 //Creates all the PID controllers from data sent from the Mega. The idea here is that we only have to edit the Mega's code to change PID values-
 //we program this, get it working, and then treat it like a black box. It also means a start-up period for the system, but eh.
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   bool reading = true;
   PID* curr;
   while(reading){

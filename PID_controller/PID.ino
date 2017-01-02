@@ -20,3 +20,4 @@ void PID::update() {
   serialWrite(err * p + total_err * i - d_input * d); 
   if(next) next->update();
 }
+
