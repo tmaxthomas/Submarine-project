@@ -1,13 +1,16 @@
 /*
- * C Register on mega for pins 30-37, D register on 328 for 0-7
+ * Data is sent over DIO pins 4-11, using the 4 high bytes of register D and the 4 low bytes of register B
  */
 //stores the tick count
-volatile int tickCount;
+volatile unsigned byte tickCount;
+
 //pin that the phototransistor circuit is connected to
 const int photoPin = 3;
+
 void setup() {
-  //set the C HW register to all output (1). Change to D for 328 equipped arduino
-  DDRC = B11111111;
+  //Configure output pins
+  DDRD |= 0b11110000;
+  DDRB |= 0b1111;
   tickCount = 0;
   //create an interrupt routine using a DI pin, ISR, and a positive edge trigger
   attachInterrupt(digitalPinToInterrupt(photoPin), updateCount, RISING);
@@ -28,21 +31,14 @@ void updateCount(){
   }
   */
   tickCount++;
-  //prevent 8 bit rollover
-  if(tickCount == 256){
-    tickCount = 0;
-  }
-  /* update this if using a bi-directional encoder system
-  else if(tickCount == -32678){
-    tickCount == 255;
-  }
-  */
   writeToPins();
 }
 /**
- * writes count to pins 30-37 on mega
+ * writes count to pins 4-11 on Nano
  */
+ 
 void writeToPins(){
-  byte pinsByte = byte(tickCount);
-  PORTC = pinsByte;
+  byte d_byte = tickCount << 4, b_byte = tickCount >> 4;
+  PORTD = d_byte;
+  PORTB = b_byte;
 }
