@@ -34,11 +34,10 @@ void updateCount(){
   writeToPins();
 }
 /**
- * writes count to pins 4-11 on Nano
+ * writes count to pins 4-11 on Nano through the magic of bitwise arithmetic
  */
  
 void writeToPins(){
-  byte d_byte = tick_count << 4, b_byte = tick_count >> 4;
-  PORTD = d_byte;
-  PORTB = b_byte;
+  PORTD = tick_count << 4;
+  PORTB = tick_count >> 4;
 }
