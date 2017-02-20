@@ -5,6 +5,11 @@
 
 //Still need to implement register trickery
 
+int spool_pos, shaft_pos, ballast_pos;
+float shaft_speed;
+unsigned byte spool_old, shaft_old, ballast_old;
+byte delta;
+
 int old_mils;
 void setup() {
   Serial.begin(115200);
@@ -24,12 +29,22 @@ void setup() {
   //Write signal-termination bytes
   serialWrite(0, 1);
   old_mils = millis(); 
+
+  //Register config
+  DDRC = 0b0;
 }
 
 void loop() {
   //Read from sensors (TODO)
 
+  //Reading from encoder Arduinos
+  //Pins 30 (PORTC 7) to 37 (PORTC 0)
+  
+  unsigned byte spool_new = PORTC;
+  delta = spool_new - spool_old;
+  spool_count += delta;
+  
   //Read/write from/to PID arduino (TODO)
   
-  while(millis() - old_mils < D_MILS) ;
+  while(millis() - old_mils < D_MILS);
 }
