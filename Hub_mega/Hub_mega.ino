@@ -32,17 +32,24 @@ void setup() {
 
   //Register config
   DDRC = 0b0;
+  DDRA = 0b0;
 }
 
 void loop() {
   //Read from sensors (TODO)
 
   //Reading from encoder Arduinos
-  //Pins 30 (PORTC 7) to 37 (PORTC 0)
+  //Pins 37 (PORTC 0) to 30 (PORTC 7) - Remember to plug this one in backwards
   
   unsigned byte spool_new = PORTC;
   delta = spool_new - spool_old;
   spool_count += delta;
+
+  //Pins 22 (PORTA 0) to 29 (PORTA 7) 
+
+  unsigned byte ballast_new = PORTA;
+  delta = ballast_new - ballast_old;
+  ballast_count += delta;
   
   //Read/write from/to PID arduino (TODO)
   
