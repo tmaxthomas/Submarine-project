@@ -15,6 +15,8 @@ void setup() {
   tick_count = 0;
   //create an interrupt routine using a DI pin, ISR, and a positive edge trigger
   attachInterrupt(digitalPinToInterrupt(photoPin), updateCount, RISING);
+  //Prevent loop() from ever being called, because repeated calls to loop slow things down
+  for(;;);
 }
 
 void loop() {}

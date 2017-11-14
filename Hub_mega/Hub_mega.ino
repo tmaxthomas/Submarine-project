@@ -3,12 +3,19 @@
 #define NUM_PID 1 //Number of PID controllers
 #define D_MILS 20 //Length of cycle, in milliseconds
 
+//Macro for reading encoder data off of registers
+#define ReadReg(Comp, Reg) byte Comp ## _new = Reg; \
+                           delta = Comp ## _new - Comp ## _old; \
+                           Comp ## _old = Comp ## _new; \
+                           Comp ## _pos += delta
+
+
 //Still need to implement register trickery
 
 int spool_pos, shaft_pos, ballast_pos;
+byte spool_old, shaft_old, ballast_old;
+bool spool_dir, ballast_dir, shaft_dir;
 float shaft_speed;
-unsigned byte spool_old, shaft_old, ballast_old;
-byte delta;
 
 int old_mils;
 void setup() {
@@ -30,26 +37,25 @@ void setup() {
   serialWrite(0, 1);
   old_mils = millis(); 
 
-  //Register config
-  DDRC = 0b0;
-  DDRA = 0b0;
+  //Register config-set them all to output
+  DDRC = 0b00000000;
+  DDRA = 0b00000000;
+  DDRL = 0b00000000;
 }
 
 void loop() {
   //Read from sensors (TODO)
 
   //Reading from encoder Arduinos
+  byte delta;
   //Pins 37 (PORTC 0) to 30 (PORTC 7) - Remember to plug this one in backwards
-  
-  unsigned byte spool_new = PORTC;
-  delta = spool_new - spool_old;
-  spool_count += delta;
+  ReadReg(ballast, PORTC);
 
   //Pins 22 (PORTA 0) to 29 (PORTA 7) 
+  ReadReg(spool, PORTA);
 
-  unsigned byte ballast_new = PORTA;
-  delta = ballast_new - ballast_old;
-  ballast_count += delta;
+  //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
+  ReadReg(shaft, PORTL);
   
   //Read/write from/to PID arduino (TODO)
   
