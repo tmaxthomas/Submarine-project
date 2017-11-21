@@ -19,10 +19,10 @@ float shaft_speed;
 
 int old_mils;
 void setup() {
-  Serial.begin(115200);
-  Serial1.begin(115200);
-  Serial2.begin(115200);
-  Serial3.begin(115200);
+  Serial.begin(115200);     //USB
+  Serial1.begin(115200);    //PID controller
+  Serial2.begin(115200);    //Radio/mini-sub
+  Serial3.begin(115200);    
   //Put p, i, and d values for controllers in these arrays
   float p_vals[NUM_PID] = { 0.01 };
   float i_vals[NUM_PID] = { 0 };
@@ -44,6 +44,9 @@ void setup() {
 }
 
 void loop() {
+  //Recieve packet from groundstation
+  
+  
   //Read from sensors (TODO)
 
   //Reading from encoder Arduinos
@@ -58,6 +61,11 @@ void loop() {
   ReadReg(shaft, PORTL);
   
   //Read/write from/to PID arduino (TODO)
+  
+
+  //Send data packet to groundstation/minisub
+  byte packet[32];
+  
   
   while(millis() - old_mils < D_MILS);
 }
