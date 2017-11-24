@@ -14,15 +14,28 @@
 #define OUT_PACKET_SIZE 32
 #define IN_PACKET_SIZE 32
 
+//Encoder data
 int spool_pos, shaft_pos, ballast_pos;
 byte spool_old, shaft_old, ballast_old;
 bool spool_dir, ballast_dir, shaft_dir;
 float shaft_speed;
 
+//Other sensor data
+
 //PID struct
 struct PID {
   float p, i, d;
+  float total_err, old_val;
 };
+
+//Updates PID controller and returns updated motor power percentage
+float updatePID(struct PID cotroller, float set_pt, float val) {
+  float err = set_pt - val;
+  total_err += err;
+  float d_val = old_val - val;
+  old_val = val;
+  return (err * controller.p) + (total_err * controller.i) - (d_val * controller.d); 
+}
 
 int old_mils;
 void setup() {
@@ -32,6 +45,8 @@ void setup() {
 
   struct PID ctrl[3];
   ctrl[0] = { .p = 0.01, .i = 0, .d = 0 };
+  ctrl[1] = { .p = 0.01, .i = 0, .d = 0 };
+  ctrl[2] = { .p = 0.01, .i = 0, .d = 0 };
   
   //Register config
   DDRC = 0b00000000;
@@ -42,6 +57,8 @@ void setup() {
 }
 
 void loop() {
+  //May want to reconsider how we pass data, accounting for how damn long it takes
+  
   byte checksum = 0;
   //Recieve packet from groundstation (TODO)
   byte in_packet[IN_PACKET_SIZE];
@@ -57,7 +74,7 @@ void loop() {
      */
   }
       
-  //Read from sensors (TODO)
+  //Read from sensors (TODO, pending port numbers and sensor arrangement finalization)
 
   //Reading from encoder Arduinos
   byte delta;
@@ -70,8 +87,7 @@ void loop() {
   //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
   ReadReg(shaft, PORTL);
   
-  //Read/write from/to PID arduino (TODO)
-  
+  //Update PID controllers and write new vals to motor controllers
   
   //Send data packet to groundstation/minisub
   byte out_packet[OUT_PACKET_SIZE];
