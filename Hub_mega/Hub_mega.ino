@@ -1,7 +1,7 @@
 #include "Serial_addons.h"
 
-#define NUM_PID 1 //Number of PID controllers
 #define D_MILS 20 //Length of cycle, in milliseconds
+#define BAUD_RATE 115200 //Baud rate (duh)
 
 //Macro for reading encoder data off of registers
 #define ReadReg(Comp, Reg) byte Comp ## _new = Reg; \
@@ -29,19 +29,19 @@ struct PID {
 };
 
 //Updates PID controller and returns updated motor power percentage
-float updatePID(struct PID cotroller, float set_pt, float val) {
+float updatePID(struct PID ctrl, float set_pt, float val) {
   float err = set_pt - val;
-  total_err += err;
-  float d_val = old_val - val;
-  old_val = val;
-  return (err * controller.p) + (total_err * controller.i) - (d_val * controller.d); 
+  ctrl.total_err += err;
+  float d_val = ctrl.old_val - val;
+  ctrl.old_val = val;
+  return (err * ctrl.p) + (ctrl.total_err * ctrl.i) - (d_val * ctrl.d); 
 }
 
 int old_mils;
 void setup() {
-  Serial.begin(115200);     //USB
-  Serial1.begin(115200);    //Backup?
-  Serial2.begin(115200);    //Radio/mini-sub    
+  Serial.begin(BAUD_RATE);     //USB
+  Serial1.begin(BAUD_RATE);    //Backup?
+  Serial2.begin(BAUD_RATE);    //Radio/mini-sub    
 
   struct PID ctrl[3];
   ctrl[0] = { .p = 0.01, .i = 0, .d = 0 };
@@ -60,7 +60,7 @@ void loop() {
   //May want to reconsider how we pass data, accounting for how damn long it takes
   
   byte checksum = 0;
-  //Recieve packet from groundstation (TODO)
+  //Recieve packet from groundstation
   byte in_packet[IN_PACKET_SIZE];
   Serial.readBytes(in_packet, IN_PACKET_SIZE);
   
@@ -70,11 +70,11 @@ void loop() {
 
   if(!checksum) {
     /*
-     * RETRIEVE DATA FROM PACKET HERE
+     * TODO: RETRIEVE DATA FROM PACKET
      */
   }
       
-  //Read from sensors (TODO, pending port numbers and sensor arrangement finalization)
+  //TODO: Read from sensors
 
   //Reading from encoder Arduinos
   byte delta;
@@ -87,12 +87,12 @@ void loop() {
   //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
   ReadReg(shaft, PORTL);
   
-  //Update PID controllers and write new vals to motor controllers
+  //TODO: Update PID controllers and write new vals to motor controllers
   
-  //Send data packet to groundstation/minisub
+  //TODO: Send data packet to groundstation/minisub
   byte out_packet[OUT_PACKET_SIZE];
   /*
-   * POPULATE PACKET HERE
+   * TODO: POPULATE PACKET
    */
 
   //Compute and append checksum
@@ -104,4 +104,5 @@ void loop() {
   Serial.write(out_packet, OUT_PACKET_SIZE);
   
   while(millis() - old_mils < D_MILS);
+  old_mils = millis();
 }
