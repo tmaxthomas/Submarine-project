@@ -1,5 +1,3 @@
-#include "Serial_addons.h"
-
 #define D_MILS 20 //Length of cycle, in milliseconds
 #define BAUD_RATE 115200 //Baud rate (duh)
 
