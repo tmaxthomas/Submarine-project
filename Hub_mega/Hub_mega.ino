@@ -41,10 +41,9 @@ void setup() {
   Serial1.begin(BAUD_RATE);    //Backup?
   Serial2.begin(BAUD_RATE);    //Radio/mini-sub
 
-  struct PID ctrl[3];
+  struct PID ctrl[2];
   ctrl[0] = { .p = 0.01, .i = 0, .d = 0 };
   ctrl[1] = { .p = 0.01, .i = 0, .d = 0 };
-  ctrl[2] = { .p = 0.01, .i = 0, .d = 0 };
 
   //Register config
   DDRC = 0b00000000;
