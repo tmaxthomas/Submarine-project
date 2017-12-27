@@ -1,0 +1,13 @@
+Each line represents one byte of the packet
+
+/-------------------------------------\
+| float    | shaft speed              |
+|          |                          |
+| uint16_t | ballast position         |
+|          |                          |
+| uint16_t | spool position           |
+|          |                          |
+| uint8_t  | water sensor readings    |
+| uint8_t  | Checksum                 |
+| int8_t   | mini-sub % shaft voltage |
+\-------------------------------------/

@@ -1,22 +1,30 @@
+#include <stdint.h>
+#include <Wire.h>
+
 #define D_MILS 20 //Length of cycle, in milliseconds
 #define BAUD_RATE 115200 //Baud rate (duh)
 
 //Macro for reading encoder data off of registers
-#define ReadReg(Comp, Reg) byte Comp ## _new = Reg; \
+#define ReadReg(Comp, Reg) uint8_t Comp ## _new = Reg; \
                            delta = Comp ## _new - Comp ## _old; \
                            Comp ## _old = Comp ## _new; \
                            Comp ## _pos += ( Comp ## _dir ? delta : -delta )
 
 
 //Sizes for outgoing and incoming packets. Subject to change once we actually figure out what we're sending.
-#define OUT_PACKET_SIZE 32
-#define IN_PACKET_SIZE 32
+#define OUT_PACKET_SIZE 9
+#define IN_PACKET_SIZE 9
+
+#define PWM_ADDR 0x40
+
+uint8_t in_pack_buf[IN_PACKET_SIZE], out_pack_buf[OUT_PACKET_SIZE];
 
 //Encoder data
-int spool_pos, shaft_pos, ballast_pos;
-byte spool_old, shaft_old, ballast_old;
+uint16_t spool_pos, shaft_pos, ballast_pos;
+uint8_t spool_old, shaft_old, ballast_old;
 bool spool_dir, ballast_dir, shaft_dir;
 float shaft_speed;
+
 
 //Other sensor data
 
@@ -24,24 +32,47 @@ float shaft_speed;
 struct PID {
   float p, i, d;
   float total_err, old_val;
-};
+} ctrl[2];
+
+
 
 //Updates PID controller and returns updated motor power percentage
-float updatePID(struct PID ctrl, float set_pt, float val) {
+float updatePID(struct PID c, float set_pt, float val) {
   float err = set_pt - val;
-  ctrl.total_err += err;
-  float d_val = ctrl.old_val - val;
-  ctrl.old_val = val;
-  return (err * ctrl.p) + (ctrl.total_err * ctrl.i) - (d_val * ctrl.d);
+  c.total_err += err;
+  float d_val = c.old_val - val;
+  c.old_val = val;
+  return (err * c.p) + (c.total_err * c.i) - (d_val * c.d);
 }
 
-int old_mils;
+// Runs initialization code for the PWM controller
+void pwm_controller_init() {
+    Wire.beginTransmission(PWM_ADDR);
+    Wire.write(0x0);
+    Wire.write(0x30);
+}
+
+void pwm_update(uint8_t num, uint16_t val) {
+    //I really don't trust Arduino's built-in min function
+    val = (val < 4096) ? val : 4096;
+
+    //Write a whole bunch of magic
+    //Refer to the PCA9685 datasheet for more information
+    Wire.beginTransmission(PWM_ADDR);
+    Wire.write(0x6 + 4*num);
+    Wire.write(0);
+    Wire.write(0);
+    Wire.write(val);
+    Wire.write(val>>8);
+    Wire.endTransmission();
+}
+
+uint32_t old_mils;
+
 void setup() {
   Serial.begin(BAUD_RATE);     //USB
-  Serial1.begin(BAUD_RATE);    //Backup?
-  Serial2.begin(BAUD_RATE);    //Radio/mini-sub
+  Serial1.begin(BAUD_RATE);    //Radio/mini-sub
 
-  struct PID ctrl[2];
   ctrl[0] = { .p = 0.01, .i = 0, .d = 0 };
   ctrl[1] = { .p = 0.01, .i = 0, .d = 0 };
 
@@ -54,16 +85,14 @@ void setup() {
 }
 
 void loop() {
-  //May want to reconsider how we pass data, accounting for how damn long it takes
-
   byte checksum = 0;
+
   //Recieve packet from groundstation
-  byte in_packet[IN_PACKET_SIZE];
-  Serial.readBytes(in_packet, IN_PACKET_SIZE);
+  Serial.readBytes(in_pack_buf, IN_PACKET_SIZE);
 
   //Confirm packet integrity
   for(int i = 0; i < IN_PACKET_SIZE; i++)
-    checksum ^= in_packet[i];
+    checksum ^= in_pack_buf[i];
 
   if(!checksum) {
     /*
@@ -94,11 +123,12 @@ void loop() {
 
   //Compute and append checksum
   checksum = 0;
-  for(int i = 0; i < OUT_PACKET_SIZE - 1; i++)
-    checksum ^= out_packet[i];
-  out_packet[OUT_PACKET_SIZE - 1] = checksum;
+  for(uint8_t i = 0; i < OUT_PACKET_SIZE - 1; i++)
+    checksum ^= out_pack_buf[i];
 
-  Serial.write(out_packet, OUT_PACKET_SIZE);
+  out_pack_buf[OUT_PACKET_SIZE - 1] = checksum;
+
+  Serial.write(out_pack_buf, OUT_PACKET_SIZE);
 
   while(millis() - old_mils < D_MILS);
   old_mils = millis();

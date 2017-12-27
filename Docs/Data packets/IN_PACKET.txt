@@ -1,0 +1,13 @@
+Each line represents one byte of the packet
+
+/----------------------------------------\
+| int8_t   | % shaft voltage             |
+| int8_t   | % rudder deflection         |
+| int8_t   | % aft dive plane deflection |
+| int8_t   | % fore plane deflection     |
+| uint16_t | Ballast setpoint            |
+|          |                             |
+| uint16_t | Spool setpoint              |
+|          |                             |
+| uint8_t  | Checksum                    |
+\----------------------------------------/
