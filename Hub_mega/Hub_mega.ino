@@ -10,6 +10,11 @@
                            Comp ## _old = Comp ## _new; \
                            Comp ## _pos += ( Comp ## _dir ? delta : -delta )
 
+#define PWMwrite(addr, val) Wire.beginTransmission(PWM_ADDR); \
+                            Wire.write(addr); \
+                            Wire.write(val); \
+                            Wire.endTransmission()
+
 
 //Sizes for outgoing and incoming packets. Subject to change once we actually figure out what we're sending.
 #define OUT_PACKET_SIZE 9
@@ -21,6 +26,8 @@ uint8_t in_pack_buf[IN_PACKET_SIZE], out_pack_buf[OUT_PACKET_SIZE];
 
 //Encoder data
 uint16_t spool_pos, shaft_pos, ballast_pos;
+uint16_t spool_set, ballast_set;
+int16_t shaft_voltage;
 uint8_t spool_old, shaft_old, ballast_old;
 bool spool_dir, ballast_dir, shaft_dir;
 float shaft_speed;
@@ -47,23 +54,26 @@ float updatePID(struct PID c, float set_pt, float val) {
 
 // Runs initialization code for the PWM controller
 void pwm_controller_init() {
-    Wire.beginTransmission(PWM_ADDR);
-    Wire.write(0x0);
-    Wire.write(0x30);
+    //Put the controller to sleep in order to prep for prescale
+    PWMWrite(0x00, 0x10);
+
+    //Write prescale
+    PWMWrite(0xFE, 0x79);
+
+    //Wake the controller back up and turn auto-increment on
+    PWMWrite(0x00, 0x20);
 }
 
 void pwm_update(uint8_t num, uint16_t val) {
     //I really don't trust Arduino's built-in min function
-    val = (val < 4096) ? val : 4096;
+    val = (val < 4095) ? val : 4095;
+    val = (val == 4095) ? ;
 
     //Write a whole bunch of magic
     //Refer to the PCA9685 datasheet for more information
     Wire.beginTransmission(PWM_ADDR);
-    Wire.write(0x6 + 4*num);
-    Wire.write(0);
-    Wire.write(0);
-    Wire.write(val);
-    Wire.write(val>>8);
+    uint8_t data = {0x6 + 4*num, 0, 0, val, val>>8};
+    Wire.write(data, 5);
     Wire.endTransmission();
 }
 
@@ -95,9 +105,9 @@ void loop() {
     checksum ^= in_pack_buf[i];
 
   if(!checksum) {
-    /*
-     * TODO: RETRIEVE DATA FROM PACKET
-     */
+    shaft_voltage = in_pack_buf[0] * 4;
+    ballast_set = *(uint16_t*)(in_pack_buf + 4);
+    spool_set = *(uint16_t*)(in_pack_buf + 6);
   }
 
   //TODO: Read from sensors
