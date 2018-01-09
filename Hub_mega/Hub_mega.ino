@@ -66,13 +66,12 @@ void pwm_controller_init() {
 
 void pwm_update(uint8_t num, uint16_t val) {
     //I really don't trust Arduino's built-in min function
-    val = (val < 4095) ? val : 4095;
-    val = (val == 4095) ? ;
+    val = (val < 4095) ? val : 4096;
 
     //Write a whole bunch of magic
     //Refer to the PCA9685 datasheet for more information
     Wire.beginTransmission(PWM_ADDR);
-    uint8_t data = {0x6 + 4*num, 0, 0, val, val>>8};
+    uint8_t data = {0x06 + 4*num, 0, 0, val, val>>8};
     Wire.write(data, 5);
     Wire.endTransmission();
 }
