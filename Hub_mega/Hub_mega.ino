@@ -28,14 +28,13 @@ uint8_t in_pack_buf[IN_PACKET_SIZE], out_pack_buf[OUT_PACKET_SIZE];
 //Encoder data
 uint16_t spool_pos, shaft_pos, ballast_pos;
 uint16_t spool_set, ballast_set;
-int8_t shaft_voltage;
 uint8_t spool_old, shaft_old, ballast_old;
 bool spool_dir, ballast_dir, shaft_dir;
 float shaft_speed;
+
+//Other sensor/misc data
 uint8_t flooded;
-
-
-//Other sensor data
+int8_t shaft_voltage;
 
 //PID struct
 struct PID {
