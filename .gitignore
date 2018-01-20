@@ -1,2 +1,4 @@
 *#*
 *~*
+#Don't track Multisim Security files
+*.ms14 (Security copy)
