@@ -122,13 +122,13 @@ void loop() {
 
     //Reading from encoder Arduinos
     byte delta;
-    //Pins 37 (PORTC 0) to 30 (PORTC 7) - Remember to plug this one in backwards
+    //Pins 37 (PORTC 0) to 30 (PORTC 7) [Spool Encoder] - Remember to plug this one in backwards
     ReadReg(ballast, PORTC);
 
-    //Pins 22 (PORTA 0) to 29 (PORTA 7)
+    //Pins 22 (PORTA 0) to 29 (PORTA 7) [Drive motor Encoder]
     ReadReg(spool, PORTA);
 
-    //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
+	//Pins 49 (PORTL 0) to 42 (PORTL 7) [Ballast Encoder] - This one goes in backwards as well
     ReadReg(shaft, PORTL);
 
     //TODO: Update PID controllers and write new vals to motor controllers
