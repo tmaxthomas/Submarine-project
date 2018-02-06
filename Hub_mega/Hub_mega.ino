@@ -35,6 +35,7 @@ float shaft_speed;
 //Other sensor/misc data
 uint8_t flooded;
 int8_t shaft_voltage;
+uint16_t fore_plane_set, aft_plane_set, rudder_set;
 
 //PID struct
 struct PID {
@@ -42,10 +43,9 @@ struct PID {
     float total_err, old_val;
 } ctrl[2];
 
-
-
 //Updates PID controller and returns updated motor power percentage
-float updatePID(struct PID c, float set_pt, float val) {
+//NOTE: Loops need to be tuned to produce values in the range 0 : 16,383
+uint16_t updatePID(struct PID c, uint16_t set_pt, uint16_t val) {
     float err = set_pt - val;
     c.total_err += err;
     float d_val = c.old_val - val;
@@ -76,10 +76,10 @@ void pwm_update(uint8_t num, uint16_t val) {
     Wire.endTransmission();
 }
 
-//Emergency abort routine
-//TODO: implement
+// Emergency abort routine
+// (just shuts down the Mega and lets the backup controller do its thing)
 void ABORT() {
-
+    for(;;);
 }
 
 uint32_t old_mils;
@@ -88,8 +88,8 @@ void setup() {
     Serial.begin(BAUD_RATE);     //USB
     Serial1.begin(BAUD_RATE);    //Radio/mini-sub
 
-    ctrl[0] = { .p = 0.01, .i = 0, .d = 0 };
-    ctrl[1] = { .p = 0.01, .i = 0, .d = 0 };
+    ctrl[0] = { .p = 0.1, .i = 0, .d = 0 }; //Ballast PID
+    ctrl[1] = { .p = 0.1, .i = 0, .d = 0 }; //Spool PID
 
     //Register config
     DDRA &= 0b00000000;
@@ -114,6 +114,9 @@ void loop() {
         shaft_voltage = in_pack_buf[0];
         ballast_set = *(uint16_t *) (in_pack_buf + 4);
         spool_set = *(uint16_t *) (in_pack_buf + 6);
+        fore_plane_set = in_pack_buf[1] << 6;
+        aft_plane_set = in_pack_buf[2] << 6;
+        rudder_set = in_pack_buf[3] << 6;
     }
 
     //Read flooding data and act accordingly
@@ -131,7 +134,17 @@ void loop() {
 	//Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
     ReadReg(shaft, PORTL);
 
-    //TODO: Update PID controllers and write new vals to motor controllers
+
+    pwm_update(0, shaft_voltage << 8);
+    pwm_update(1, updatePID(ctrl[0], ballast_set, ballast_pos));
+    //TODO: Figure out how to get negative voltages to servos
+    pwm_update(2, fore_plane_set); //Fore dive planes
+    pwm_update(3, aft_plane_set); //Aft dive planes
+    pwm_update(4, rudder_set); //Aft rudder
+    pwm_update(5, updatePID(ctrl[1], spool_set, spool_pos));
+
+    //TODO: Figure out what the heck we're doing with the running lights
+
 
     byte out_pack_buf[OUT_PACKET_SIZE];
 
