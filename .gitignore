@@ -2,3 +2,5 @@
 *~*
 #Don't track Multisim Security files
 *.ms14 (Security copy)
+#Don't track the Inventor OldVersions Folder
+/CAD/OldVersions/*
