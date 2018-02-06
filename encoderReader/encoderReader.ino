@@ -1,9 +1,22 @@
+#include <stdint.h>
+
 /*
  * Data is sent over DIO pins 4-11, using the 4 high bytes of register D and the 4 low bytes of register B
  */
- 
+
 //stores the tick count
-volatile byte tick_count;
+volatile uint8_t tick_count;
+
+ /**
+ * Updates the tick counter when called, then writes the updated tick count to the pins
+ * Counter should automatically wrap around to 0
+ */
+void updateCount(){
+  tick_count++;
+  PORTD = tick_count << 4;
+  PORTB = tick_count >> 4;
+}
+
 
 //pin that the phototransistor circuit is connected to
 const int photoPin = 3;
@@ -21,12 +34,4 @@ void setup() {
 
 void loop() {}
 
-/**
- * Updates the tick counter when called, then writes the updated tick count to the pins
- * Counter should automatically wrap around to 0
- */
-void updateCount(){
-  tick_count++;
-  PORTD = tick_count << 4;
-  PORTB = tick_count >> 4;
-}
+
