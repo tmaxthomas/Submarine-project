@@ -118,7 +118,8 @@ void loop() {
         aft_plane_set = in_pack_buf[2] << 6;
         rudder_set = in_pack_buf[3] << 6;
     }
-
+    
+    //TODO: Redo flood determination code
     //Read flooding data and act accordingly
     flooded = PORTG;
     if(flooded) ABORT();
@@ -137,7 +138,6 @@ void loop() {
 
     pwm_update(0, shaft_voltage << 8);
     pwm_update(1, updatePID(ctrl[0], ballast_set, ballast_pos));
-    //TODO: Figure out how to get negative voltages to servos
     pwm_update(2, fore_plane_set); //Fore dive planes
     pwm_update(3, aft_plane_set); //Aft dive planes
     pwm_update(4, rudder_set); //Aft rudder
