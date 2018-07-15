@@ -1,51 +1,52 @@
 #include <stdint.h>
 #include <Wire.h>
+#include "../common.h"
 
 #define D_MILS 20 //Length of cycle, in milliseconds
-#define BAUD_RATE 115200 //Baud rate (duh)
 
 //Macro for reading encoder data off of registers
-#define ReadReg(Comp, Reg) uint8_t Comp ## _new = Reg; \
-                           delta = Comp ## _new - Comp ## _old; \
-                           Comp ## _old = Comp ## _new; \
-                           Comp ## _pos += ( Comp ## _dir ? delta : -delta )
+#define READ_REG(Comp, Reg)                                 \
+    do {                                                    \
+        uint8_t Comp ## _new = Reg;                         \
+        delta = Comp ## _new - Comp ## _old;                \
+        Comp ## _old = Comp ## _new;                        \
+        Comp ## _pos += ( Comp ## _dir ? delta : -delta );  \
+    while(0)
 
-#define PWMWrite(addr, val) Wire.beginTransmission(PWM_ADDR); \
-                            Wire.write(addr); \
-                            Wire.write(val); \
-                            Wire.endTransmission()
-
-
-//Sizes for outgoing and incoming packets. Subject to change once we actually figure out what we're sending.
-#define OUT_PACKET_SIZE 9
-#define IN_PACKET_SIZE 9
+#define PWM_WRITE(addr, val)                                \
+    do {                                                    \
+        Wire.beginTransmission(PWM_ADDR);                   \
+        Wire.write(addr);                                   \
+        Wire.write(val);                                    \
+        Wire.endTransmission();                             \
+    } while(0)
 
 // I2C address of the PWM controller
 #define PWM_ADDR 0x40
 
 uint8_t in_pack_buf[IN_PACKET_SIZE], out_pack_buf[OUT_PACKET_SIZE];
 
-//Encoder data
+// Encoder data
 uint16_t spool_pos, shaft_pos, ballast_pos;
 uint16_t spool_set, ballast_set;
 uint8_t spool_old, shaft_old, ballast_old;
 bool spool_dir, ballast_dir, shaft_dir;
 float shaft_speed;
 
-//Other sensor/misc data
+// Other sensor/misc data
 uint8_t flooded;
 int8_t shaft_voltage;
 uint16_t fore_plane_set, aft_plane_set, rudder_set;
 
-//PID struct
-struct PID {
+// PID struct
+struct pid_t {
     float p, i, d;
     float total_err, old_val;
-} ctrl[2];
+} pid[2];
 
-//Updates PID controller and returns updated motor power percentage
-//NOTE: Loops need to be tuned to produce values in the range 0 : 16,383
-uint16_t updatePID(struct PID c, uint16_t set_pt, uint16_t val) {
+// Updates PID controller and returns updated motor power percentage
+// NOTE: Loops need to be tuned to produce values in the range 0 : 16,383
+uint16_t update_pid(struct pid_t c, uint16_t set_pt, uint16_t val) {
     float err = set_pt - val;
     c.total_err += err;
     float d_val = c.old_val - val;
@@ -56,13 +57,13 @@ uint16_t updatePID(struct PID c, uint16_t set_pt, uint16_t val) {
 // Runs initialization code for the PWM controller
 void pwm_controller_init() {
     //Put the controller to sleep in order to prep for prescale
-    PWMWrite(0x00, 0x10);
+    PWM_WRITE(0x00, 0x10);
 
     //Write prescale
-    PWMWrite(0xFE, 0x79);
+    PWM_WRITE(0xFE, 0x79);
 
     //Wake the controller back up and turn auto-increment on
-    PWMWrite(0x00, 0x20);
+    PWM_WRITE(0x00, 0x20);
 }
 
 void pwm_update(uint8_t num, uint16_t val) {
@@ -123,25 +124,26 @@ void loop() {
     //Read flooding data and act accordingly
     flooded = PORTG;
     if(flooded) ABORT();
-
+    
+    // TODO: Re-write once we have a proper pinout
     //Reading from encoder Arduinos
     byte delta;
     //Pins 37 (PORTC 0) to 30 (PORTC 7) - Remember to plug this one in backwards
-    ReadReg(ballast, PORTC);
+    READ_REG(ballast, PORTC);
 
     //Pins 22 (PORTA 0) to 29 (PORTA 7)
-    ReadReg(spool, PORTA);
+    READ_REG(spool, PORTA);
 
 	//Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
-    ReadReg(shaft, PORTL);
+    READ_REG(shaft, PORTL);
 
 
     pwm_update(0, shaft_voltage << 8);
-    pwm_update(1, updatePID(ctrl[0], ballast_set, ballast_pos));
+    pwm_update(1, update_pid(ctrl[0], ballast_set, ballast_pos));
     pwm_update(2, fore_plane_set); //Fore dive planes
     pwm_update(3, aft_plane_set); //Aft dive planes
     pwm_update(4, rudder_set); //Aft rudder
-    pwm_update(5, updatePID(ctrl[1], spool_set, spool_pos));
+    pwm_update(5, update_pid(ctrl[1], spool_set, spool_pos));
 
     //TODO: Figure out what the heck we're doing with the running lights
 
@@ -153,19 +155,18 @@ void loop() {
     *(uint16_t *) (out_pack_buf + 2) = ballast_pos;
     *(uint16_t *) (out_pack_buf + 4) = spool_pos;
     out_pack_buf[6] = flooded;
+    out_pack_buf[7] = shaft_voltage;
 
     //Compute and append checksum
     checksum = 0;
-    for(uint8_t i = 0; i < OUT_PACKET_SIZE - 2; i++)
+    for(uint8_t i = 0; i < OUT_PACKET_SIZE - 1; i++) {
         checksum ^= out_pack_buf[i];
-    out_pack_buf[OUT_PACKET_SIZE - 2] = checksum;
-
-    //Send main sub shaft voltage to mini-sub
-    //TODO: determine conversion formula from main shaft voltage to mini-sub shaft voltage
-    out_pack_buf[OUT_PACKET_SIZE - 1] = shaft_voltage;
-
+    }
+    
+    out_pack_buf[OUT_PACKET_SIZE - 1] = checksum;
     Serial.write(out_pack_buf, OUT_PACKET_SIZE);
 
-    while(millis() - old_mils < D_MILS);
+    while(millis() - old_mils < D_MILS); {
         old_mils = millis();
+    }
 }

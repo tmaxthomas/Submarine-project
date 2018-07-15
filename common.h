@@ -1,0 +1,3 @@
+#define OUT_PACKET_SIZE 9
+#define IN_PACKET_SIZE 9
+#define BAUD_RATE 115200
