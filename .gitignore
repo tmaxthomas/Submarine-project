@@ -1,6 +1,12 @@
 *#*
 *~*
-#Don't track Multisim Security files
+
+# Multisim Security files
 *.ms14 (Security copy)
-#Don't track the Inventor OldVersions Folder
+
+# Inventor OldVersions Folder
 /CAD/OldVersions/*
+
+# Vim swap files
+*.swp
+*.swo
