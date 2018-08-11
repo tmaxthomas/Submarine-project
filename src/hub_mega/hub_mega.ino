@@ -1,8 +1,7 @@
 #include <stdint.h>
 #include <Wire.h>
-#include <Arduino.h>
 
-#include "common.h"
+#include "../common.h"
 
 #define D_MILS 20 //Length of cycle, in milliseconds
 
@@ -85,9 +84,7 @@ void ABORT() {
     for(;;);
 }
 
-uint32_t old_mils;
-
-int main() {
+void setup() {
     Serial.begin(BAUD_RATE);     //USB
     Serial1.begin(BAUD_RATE);    //Radio/mini-sub
 
@@ -99,78 +96,78 @@ int main() {
     DDRC &= 0b00000000;
     DDRG &= 0b00000111;
     DDRL &= 0b00000000;
+}
 
+uint32_t old_mils;
+
+void loop() {
     old_mils = millis();
 
-    for (;;) {
-        byte checksum = 0;
+    byte checksum = 0;
 
-        //Recieve packet from groundstation
-        Serial.readBytes(in_pack_buf, IN_PACKET_SIZE);
+    //Recieve packet from groundstation
+    Serial.readBytes(in_pack_buf, IN_PACKET_SIZE);
 
-        //Confirm packet integrity
-        for(int i = 0; i < IN_PACKET_SIZE; i++)
-            checksum ^= in_pack_buf[i];
+    //Confirm packet integrity
+    for(int i = 0; i < IN_PACKET_SIZE; i++)
+        checksum ^= in_pack_buf[i];
 
-        if(!checksum) {
-            shaft_voltage = in_pack_buf[0];
-            ballast_set = *(uint16_t *) (in_pack_buf + 4);
-            spool_set = *(uint16_t *) (in_pack_buf + 6);
-            fore_plane_set = in_pack_buf[1] << 6;
-            aft_plane_set = in_pack_buf[2] << 6;
-            rudder_set = in_pack_buf[3] << 6;
-        }
-        
-        // TODO: Redo flood determination code
-        //Read flooding data and act accordingly
-        flooded = PORTG;
-        if(flooded) ABORT();
-        
-        // TODO: Re-write to account for new 3-wire busses
-        //Reading from encoder Arduinos
-        byte delta;
-        //Pins 37 (PORTC 0) to 30 (PORTC 7) - Plug this one in backwards
-        READ_REG(ballast, PORTC);
-
-        //Pins 22 (PORTA 0) to 29 (PORTA 7)
-        READ_REG(spool, PORTA);
-
-        //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
-        READ_REG(shaft, PORTL);
-
-
-        pwm_update(0, shaft_voltage << 8);
-        pwm_update(1, update_pid(pid[0], ballast_set, ballast_pos));
-        pwm_update(2, fore_plane_set); //Fore dive planes
-        pwm_update(3, aft_plane_set); //Aft dive planes
-        pwm_update(4, rudder_set); //Aft rudder
-        pwm_update(5, update_pid(pid[1], spool_set, spool_pos));
-
-        // TODO: Figure out what the heck we're doing with the running lights
-
-
-        byte out_pack_buf[OUT_PACKET_SIZE];
-
-        //Populate packet with data
-        *(float *) out_pack_buf = shaft_speed;
-        *(uint16_t *) (out_pack_buf + 2) = ballast_pos;
-        *(uint16_t *) (out_pack_buf + 4) = spool_pos;
-        out_pack_buf[6] = flooded;
-        out_pack_buf[7] = shaft_voltage;
-
-        //Compute and append checksum
-        checksum = 0;
-        for(uint8_t i = 0; i < OUT_PACKET_SIZE - 1; i++) {
-            checksum ^= out_pack_buf[i];
-        }
-        
-        out_pack_buf[OUT_PACKET_SIZE - 1] = checksum;
-        Serial.write(out_pack_buf, OUT_PACKET_SIZE);
-
-        while(millis() - old_mils < D_MILS); {
-            old_mils = millis();
-        }
+    if(!checksum) {
+        shaft_voltage = in_pack_buf[0];
+        ballast_set = *(uint16_t *) (in_pack_buf + 4);
+        spool_set = *(uint16_t *) (in_pack_buf + 6);
+        fore_plane_set = in_pack_buf[1] << 6;
+        aft_plane_set = in_pack_buf[2] << 6;
+        rudder_set = in_pack_buf[3] << 6;
     }
+    
+    // TODO: Redo flood determination code
+    //Read flooding data and act accordingly
+    flooded = PORTG;
+    if(flooded) ABORT();
+    
+    // TODO: Re-write to account for new 3-wire busses
+    //Reading from encoder Arduinos
+    byte delta;
+    //Pins 37 (PORTC 0) to 30 (PORTC 7) - Plug this one in backwards
+    READ_REG(ballast, PORTC);
 
-    return 0;
+    //Pins 22 (PORTA 0) to 29 (PORTA 7)
+    READ_REG(spool, PORTA);
+
+    //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
+    READ_REG(shaft, PORTL);
+
+
+    pwm_update(0, shaft_voltage << 8);
+    pwm_update(1, update_pid(pid[0], ballast_set, ballast_pos));
+    pwm_update(2, fore_plane_set); //Fore dive planes
+    pwm_update(3, aft_plane_set); //Aft dive planes
+    pwm_update(4, rudder_set); //Aft rudder
+    pwm_update(5, update_pid(pid[1], spool_set, spool_pos));
+
+    // TODO: Figure out what the heck we're doing with the running lights
+
+
+    byte out_pack_buf[OUT_PACKET_SIZE];
+
+    //Populate packet with data
+    *(float *) out_pack_buf = shaft_speed;
+    *(uint16_t *) (out_pack_buf + 2) = ballast_pos;
+    *(uint16_t *) (out_pack_buf + 4) = spool_pos;
+    out_pack_buf[6] = flooded;
+    out_pack_buf[7] = shaft_voltage;
+
+    //Compute and append checksum
+    checksum = 0;
+    for(uint8_t i = 0; i < OUT_PACKET_SIZE - 1; i++) {
+        checksum ^= out_pack_buf[i];
+    }
+    
+    out_pack_buf[OUT_PACKET_SIZE - 1] = checksum;
+    Serial.write(out_pack_buf, OUT_PACKET_SIZE);
+
+    while(millis() - old_mils < D_MILS); {
+        old_mils = millis();
+    }
 }
