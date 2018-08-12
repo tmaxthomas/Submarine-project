@@ -9,19 +9,21 @@ void update_ports() {
 
 }
 
+// Ballast
 void update_count_2(){
     uint8_t tick_count = (aggregated_counter & 0b111) + 1;
     aggregated_counter = (aggregated_counter & 0b111111000) | tick_count;
     update_ports();
 }
 
+// Spool
 void update_count_3(){
     uint8_t tick_count = (aggregated_counter & 0b111000) + 0b1000;
     aggregated_counter = (aggregated_counter & 0b111000111) | tick_count;
     update_ports();
 }
 
-
+// Shuttle1
 void update_count_4(){
     uint8_t tick_count = (aggregated_counter & 0b111000000) + 0b1000000;
     aggregated_counter = (aggregated_counter & 0b111111) | tick_count;
@@ -35,8 +37,8 @@ void setup() {
     aggregated_counter = 0;
 
     attachInterrupt(digitalPinToInterrupt(2), update_count_2, RISING);
-    attachInterrupt(digitalPinToInterrupt(3), updateCount, RISING);
-    attachInterrupt(digitalPinToInterrupt(4), updateCount, RISING);
+    attachInterrupt(digitalPinToInterrupt(3), update_count_3, RISING);
+    attachInterrupt(digitalPinToInterrupt(4), update_count_4, RISING);
   
     // Prevent loop() from ever being called, because repeated calls to loop slow things down
     for(;;);

@@ -5,15 +5,16 @@
 
 #define D_MILS 20 //Length of cycle, in milliseconds
 
-//Macro for reading encoder data off of registers
-#define READ_REG(Comp, Reg)                                 \
+// Macro for updating encoder positions, accounting for direction of rotation
+#define INCREMENT(VAR, VAL)                                 \
     do {                                                    \
-        uint8_t Comp ## _new = Reg;                         \
-        delta = Comp ## _new - Comp ## _old;                \
-        Comp ## _old = Comp ## _new;                        \
-        Comp ## _pos += ( Comp ## _dir ? delta : -delta );  \
-    while(0)
+        uint8_t COMP ## _new = VAL, delta = 0;              \
+        delta = COMP ## _new - COMP ## _old;                \
+        COMP ## _old = COMP ## _new;                        \
+        COMP ## _pos += ( COMP ## _dir ? delta : -delta );  \
+    } while(0)
 
+// Macro for writing packets to the PWM controller over I2C
 #define PWM_WRITE(addr, val)                                \
     do {                                                    \
         Wire.beginTransmission(PWM_ADDR);                   \
@@ -28,10 +29,10 @@
 uint8_t in_pack_buf[IN_PACKET_SIZE], out_pack_buf[OUT_PACKET_SIZE];
 
 // Encoder data
-uint16_t spool_pos, shaft_pos, ballast_pos;
-uint16_t spool_set, ballast_set;
-uint8_t spool_old, shaft_old, ballast_old;
-bool spool_dir, ballast_dir, shaft_dir;
+uint16_t spool_pos, shaft_pos, ballast_pos, shuttle_pos;
+uint16_t spool_set, ballast_set, shuttle_set;
+uint8_t spool_old, shaft_old, ballast_old, shuttle_old;
+bool spool_dir, ballast_dir, shaft_dir, shuttle_dir;
 float shaft_speed;
 
 // Other sensor/misc data
@@ -65,6 +66,25 @@ void pwm_controller_init() {
 
     //Wake the controller back up and turn auto-increment on
     PWM_WRITE(0x00, 0x20);
+}
+
+// Reads and records updated encoder values off of the parallel busses coming from
+// the encoder Nanos
+void read_encoders() {
+    // Pins 22 (PORTA 0) to 29 (PORTA 7)
+    uint8_t shaft_raw = PORTA;
+    INCREMENT(shaft, shaft_raw);
+
+    // Pins 34 (PORTC 3) to 30 (PORTC 7) and 49 (PORTL 0) to 46 (PORTL 3)
+    uint8_t ballast_raw, spool_raw, shuttle_raw;
+    uint16_t aggregated_raw = ((PORTC & 0b11111000) << 1) + (PORTL & 0b1111);
+    ballast_raw = aggregated_raw & 0b111;
+    spool_raw = (aggregated_raw >> 3) & 0b111;
+    shuttle_raw = (aggregated_raw >> 6) & 0b111;
+    
+    INCREMENT(ballast, ballast_raw);
+    INCREMENT(spool, spool_raw);
+    INCREMENT(shuttle, shuttle_raw);
 }
 
 void pwm_update(uint8_t num, uint16_t val) {
@@ -109,8 +129,9 @@ void loop() {
     Serial.readBytes(in_pack_buf, IN_PACKET_SIZE);
 
     //Confirm packet integrity
-    for(int i = 0; i < IN_PACKET_SIZE; i++)
+    for(int i = 0; i < IN_PACKET_SIZE; i++) {
         checksum ^= in_pack_buf[i];
+    }
 
     if(!checksum) {
         shaft_voltage = in_pack_buf[0];
@@ -126,19 +147,8 @@ void loop() {
     flooded = PORTG;
     if(flooded) ABORT();
     
-    // TODO: Re-write to account for new 3-wire busses
-    //Reading from encoder Arduinos
-    byte delta;
-    //Pins 37 (PORTC 0) to 30 (PORTC 7) - Plug this one in backwards
-    READ_REG(ballast, PORTC);
-
-    //Pins 22 (PORTA 0) to 29 (PORTA 7)
-    READ_REG(spool, PORTA);
-
-    //Pins 49 (PORTL 0) to 42 (PORTL 7) - This one goes in backwards as well
-    READ_REG(shaft, PORTL);
-
-
+    read_encoders();
+    
     pwm_update(0, shaft_voltage << 8);
     pwm_update(1, update_pid(pid[0], ballast_set, ballast_pos));
     pwm_update(2, fore_plane_set); //Fore dive planes
