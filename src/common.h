@@ -13,7 +13,6 @@ struct in_pack_t {
 };
 
 struct out_pack_t {
-    float shaft_speed;
     uint16_t ballast_pos;
     uint16_t spool_pos;
     uint8_t flooded;

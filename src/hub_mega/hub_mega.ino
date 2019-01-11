@@ -1,44 +1,58 @@
 #include <Wire.h>
 #include "../common.h"
 
-#define D_MILS 50 //Length of cycle, in milliseconds
+/******************
+ * MACROS/DEFINES *
+ ******************/
 
-typedef struct {
-    uint16_t pos, set, old;
-    bool dir;
-} encoder_t spool, shaft, ballast, shuttle;
-
-static inline void increment(encoder_t *enc, uint8_t val) {
-    uint8_t delta = val - enc->old;
-    enc->old = val;
-    enc->pos += (enc->dir ? delta : -delta);
-}
-
-static inline void pwm_write(uint8_t addr, uint8_t val) {
-    Wire.beginTransmission(PWM_ADDR);
-    Wire.write(addr);
-    Wire.write(val);
-    Wire.endTransmission();
-}
-
+//Length of cycle, in milliseconds
+#define D_MILS 50
 // I2C address of the PWM controller
 #define PWM_ADDR 0x40
 
-struct in_pack in_packet;
-struct out_pack out_packet;
+/***********
+ * STRUCTS *
+ ***********/
 
-float shaft_speed;
+struct encoder_t {
+    uint16_t pos, set, old;
+    bool dir;
+} spool, ballast, shuttle;
+
+struct pid_t {
+    float p, i, d;
+    float total_err, old_val;
+} pid[2];
+
+/***********
+ * GLOBALS *
+ ***********/
+
+struct in_pack_t in_packet;
+struct out_pack_t out_packet;
 
 // Other sensor/misc data
 uint8_t flooded;
 int8_t shaft_voltage;
 uint16_t fore_plane_set, aft_plane_set, rudder_set;
+uint32_t old_mils;
 
-// PID struct
-struct pid_t {
-    float p, i, d;
-    float total_err, old_val;
-} pid[2];
+/*************
+ * FUNCTIONS *
+ *************/
+
+void increment(struct encoder_t *enc, uint8_t val) {
+    uint8_t delta = val - enc->old;
+    enc->old = val;
+    enc->pos += (enc->dir ? delta : -delta);
+}
+
+void pwm_write(uint8_t addr, uint8_t val) {
+    Wire.beginTransmission(PWM_ADDR);
+    Wire.write(addr);
+    Wire.write(val);
+    Wire.endTransmission();
+}
 
 // Updates PID controller and returns updated motor power percentage
 // NOTE: Loops need to be tuned to produce values in the range 0 : 16,383
@@ -64,11 +78,7 @@ void pwm_controller_init() {
 
 // Reads and records updated encoder values off of the parallel busses coming from
 // the encoder Nanos
-void read_encoders() {
-    // Pins 22 (PORTA 0) to 29 (PORTA 7)
-    uint8_t shaft_raw = PORTA;
-    increment(&shaft, shaft_raw);
-
+inline void read_encoders() {
     // Pins 34 (PORTC 3) to 30 (PORTC 7) and 49 (PORTL 0) to 46 (PORTL 3)
     uint8_t ballast_raw, spool_raw, shuttle_raw;
     uint16_t aggregated_raw = ((PORTC & 0b11111000) << 1) + (PORTL & 0b1111);
@@ -87,7 +97,7 @@ void pwm_update(uint8_t num, uint16_t val) {
     // Write a whole bunch of magic
     // Refer to the PCA9685 datasheet for more information
     Wire.beginTransmission(PWM_ADDR);
-    uint8_t data[5] = {0x06 + 4*num, 0, 0, val, val>>8};
+    uint8_t data[5] = {0x06 + 4*num, 0, 0, val, val >> 8};
     Wire.write(data, 5);
     Wire.endTransmission();
 }
@@ -97,6 +107,10 @@ void pwm_update(uint8_t num, uint16_t val) {
 void emerg_abort() {
     for(;;);
 }
+
+/**************
+ * SETUP/LOOP *
+ **************/
 
 void setup() {
     Serial.begin(BAUD_RATE);     //USB
@@ -112,28 +126,26 @@ void setup() {
     DDRL &= 0b00000000;
 }
 
-uint32_t old_mils;
-
 void loop() {
     old_mils = millis();
 
-    uint8_t checksum = 0;
-
     // Recieve packet from groundstation
-    Serial.readBytes(in_pack_buf, IN_PACKET_SIZE);
+    Serial.readBytes(&in_packet, sizeof(in_packet));
 
     // Confirm packet integrity
-    for (int i = 0; i < IN_PACKET_SIZE; i++) {
-        checksum ^= in_pack_buf[i];
+    uint8_t checksum_verify = 0,
+            *pack_ptr = (uint8_t *) &in_packet;
+    for (int i = 0; i < sizeof(in_packet); i++) {
+        checksum_verify ^= pack_ptr[i];
     }
 
-    if (!checksum) {
-        shaft_voltage = in_pack_buf[0];
-        ballast.set = *(uint16_t *) (in_pack_buf + 4);
-        spool.set = *(uint16_t *) (in_pack_buf + 6);
-        fore_plane_set = in_pack_buf[1] << 6;
-        aft_plane_set = in_pack_buf[2] << 6;
-        rudder_set = in_pack_buf[3] << 6;
+    if (!checksum_verify) {
+        shaft_voltage = in_packet.shaft_voltage;
+        ballast.set = in_packet.ballast_set;
+        spool.set = in_packet.spool_set;
+        fore_plane_set = in_packet.fore_plane_set;
+        aft_plane_set = in_packet.aft_plane_set;
+        rudder_set = in_packet.rudder_set;
     }
 
     // TODO: Determine if this is actually a todo
@@ -155,7 +167,6 @@ void loop() {
 
 
     // Populate packet with data
-    out_packet.shaft_speed = shaft_speed;
     out_packet.ballast_pos = ballast_pos;
     out_packet.spool_pos = spool_pos;
     out_packet.flooded = flooded;
@@ -163,15 +174,17 @@ void loop() {
 
     // Compute and append checksum
     out_packet.checksum = 0;
+    pack_ptr = (uint8_t *) &out_packet;
     for (uint8_t i = 0; i < sizeof(out_packet) - 1; i++) {
-        checksum ^= ((uint8_t *) &out_packet)[i];
+        out_packet.checksum ^= pack_ptr[i];
     }
 
     Serial.write(&out_packet, sizeof(out_packet));
 
     // Yes, this hammers the CPU... but since we're one process, running in real mode, it doesn't
     // matter
-    while (millis() - old_mils < D_MILS); {
-        old_mils = millis();
+    int new_mils;
+    while ((new_mils = millis()) - old_mils < D_MILS) {
+        old_mils = new_mils;
     }
 }
