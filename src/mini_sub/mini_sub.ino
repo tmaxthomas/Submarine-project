@@ -1,12 +1,13 @@
 #include "../common.h"
-#include <SPI.h>
-#include <strings.h>
+#include "../RF24/RF24.h"
 
 /******************
  * DEFINES/MACROS *
  ******************/
 
-#define CSN_PIN 3
+// TODO: Check the actual pinout
+#define CE_PIN 4
+#define CS_PIN 3
 
 /***********
  * GLOBALS *
@@ -15,32 +16,36 @@
 struct in_pack_t in_packet;
 struct out_pack_t out_packet;
 
-/*************
- * FUNCTIONS *
- *************/
-
-void SPI_write(uint8_t *buf, uint8_t len) {
-    digitalWrite(CSN_PIN, LOW);
-}
+RF_24 radio(CE_PIN, CS_PIN, SPI_RATE);
 
 /**************
  * SETUP/LOOP *
  **************/
 
 void setup() {
-    Serial.begin(BAUD_RATE);
-    // TODO: SPI mode might be wrong
-    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
-    digitalWrite(CSN_PIN, HIGH);
+    Serial.begin(115200);
+
+    radio.begin();
+    radio.openWritingPipe(GROUNDSTATION_ADDR);
+    radio.openReadingPipe(MINISUB_ADDR);
+    radio.startListening();
 }
 
 void loop() {
+    // Busy loop until something is available
+    while (!radio.available());
 
-    // TODO: Read the input packet from SPI, somehow
+    // Read the thing
+    radio.read(&in_packet, sizeof(in_packet));
 
+    // Write the thing to the hub
     Serial.write(&in_packet, sizeof(in_packet));
 
+    // Read the hub's response
     Serial.readBytes(&out_packet, sizeof(out_packet));
 
-    // TODO: Write the out packet to SPI, somehow
+    // Send the hub's response to the groundstation
+    radio.stopListening();
+    radio.write(&out_packet, sizeof(out_packet));
+    radio.startListening();
 }

@@ -20,8 +20,8 @@ struct encoder_t {
 } spool, ballast, shuttle;
 
 struct pid_t {
-    float p, i, d;
-    float total_err, old_val;
+    uint16_t p, i, d;
+    uint16_t total_err, old_val;
 } pid[2];
 
 /***********
@@ -57,9 +57,9 @@ void pwm_write(uint8_t addr, uint8_t val) {
 // Updates PID controller and returns updated motor power percentage
 // NOTE: Loops need to be tuned to produce values in the range 0 : 16,383
 uint16_t update_pid(struct pid_t c, uint16_t set_pt, uint16_t val) {
-    float err = set_pt - val;
+    uint16_t err = set_pt - val;
     c.total_err += err;
-    float d_val = c.old_val - val;
+    uint16_t d_val = c.old_val - val;
     c.old_val = val;
     return (err * c.p) + (c.total_err * c.i) - (d_val * c.d);
 }
@@ -156,11 +156,11 @@ void loop() {
 
     read_encoders();
 
-    pwm_update(0, shaft_voltage << 8);
+    pwm_update(0, shaft_voltage << 4);
     pwm_update(1, update_pid(pid[0], ballast_set, ballast_pos));
-    pwm_update(2, fore_plane_set); //Fore dive planes
-    pwm_update(3, aft_plane_set); //Aft dive planes
-    pwm_update(4, rudder_set); //Aft rudder
+    pwm_update(2, fore_plane_set << 4); //Fore dive planes
+    pwm_update(3, aft_plane_set << 4); //Aft dive planes
+    pwm_update(4, rudder_set << 4); //Aft rudder
     pwm_update(5, update_pid(pid[1], spool_set, spool_pos));
 
     // TODO: Figure out what the heck we're doing with the running lights
