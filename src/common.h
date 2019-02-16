@@ -1,6 +1,10 @@
 #include <stdint.h>
 
 #define BAUD_RATE 115200
+#define SPI_RATE 5000000
+
+#define MINISUB_ADDR "1Node"
+#define GROUNDSTATION_ADDR "2Node"
 
 struct in_pack_t {
     int8_t shaft_voltage;
