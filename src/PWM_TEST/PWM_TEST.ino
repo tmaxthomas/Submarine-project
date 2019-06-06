@@ -27,7 +27,7 @@ void setup() {
   
   Serial.println("Arming ESC(s)...");
   //ARM ESC HERE:
-  pwm.setPWM(servonum, 0, armPulse);
+ // pwm.setPWM(servonum, 0, armPulse);
   delay(4000);
   Serial.println("ESC(s) Armed, Program ready!");
 }
@@ -46,9 +46,11 @@ void loop() {
 			//init mode
 			if(serialData.equals("Set Port")){
 				mode = 1;
+        Serial.println("In Port Setting Mode: Type a valid port number now");
 			}
 			else if(serialData.equals("Set Pulse")){
 				mode = 2;
+        Serial.println("In Pulse Setting mode: Type a valid Pulse number now");
 			}
 		}
 		else if(mode == 1){
