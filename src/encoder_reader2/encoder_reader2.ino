@@ -46,6 +46,11 @@ uint8_t carriageDebounce = 0;
 uint8_t spoolDebounce = 0;
 uint8_t ballastDebounce = 0;
 
+uint8_t debounceThreshhold = 3;
+
+uint8_t delayTime = 100;
+
+
 //
 void setup() {
 	//Configure the GPIO as INPUT/OUTPUT
@@ -72,6 +77,9 @@ If there is a change, check the corresponding direction sense pin. Then incremen
 */
 void loop() {
 	
+	
+	
+	delayMicroseconds(delayTime);
 }
 /*
 reads one of the hall effect pins. Performs a debounce check. 
@@ -79,6 +87,13 @@ Returns the increment amount int8_t: -1, 0, or 1
 */
 int8_t readPin(uint8_t pin, uint8_t sensePin){
 	int8_t increment = 0;
+	bool pinRead = digitalRead(pin);
+	//If pin read high and correct debounce count reached, increment parallel bus
+	if(pinRead && getDebounceCount(pin) == debounceThreshhold){
+		digitalRead(sensePin);
+	}
+	//If pin read high and insufficient debounce count reached, increment debounce counter
+	else if(pinRead && getDebounceCount(pin) < debounceThreshhold)
 	
 	
 	return increment; 
@@ -90,6 +105,29 @@ void updateBus(uint8_t LSB, uint8_t MSB, int8_t increment){
 	
 }
 
+uint8_t getDebounceCount(uint8_t pin){
+	if(pin == carriageHall){
+		return carriageDebounce;
+	}
+	else if(pin == spoolHall){
+		return spoolDebounce;
+	}
+	else if(pin == ballastHall){
+		return ballastDebounce;
+	}
+}
+
+void updateDebounceCount(uint8_t pin){
+	if(pin == carriageHall){
+		carriageDebounce++;
+	}
+	else if(pin == spoolHall){
+		spoolDebounce++;
+	}
+	else if(pin == ballastHall){
+		ballastDebounce++;
+	}
+}
 
 
 
