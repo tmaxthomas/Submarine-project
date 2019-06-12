@@ -42,17 +42,26 @@ uint8_t ballastLSB =	6;
 uint8_t ballastMSB =	3;
 
 //Debounce Counters
-uint8_t carriageDebounce = 0;
-uint8_t spoolDebounce = 0;
-uint8_t ballastDebounce = 0;
+uint8_t carriageDebounce =	0;
+uint8_t spoolDebounce =		0;
+uint8_t ballastDebounce =	0;
 
 uint8_t debounceThreshhold = 3;
 
-uint8_t delayTime = 100;
+uint8_t delayTime = 500;
 
+//Parallel Bus Current data:
+uint8_t carriageBus =	0;
+uint8_t spoolBus =		0;
+uint8_t ballastBus =	0;
 
-//
+//DEBUG:
+long serialCounter = 0;
+
 void setup() {
+	
+	//DEBUG:
+	Serial.begin(9600);
 	//Configure the GPIO as INPUT/OUTPUT
 	pinMode(carriageHall, INPUT);
 	pinMode(spoolHall, INPUT);
@@ -76,10 +85,23 @@ As the code loops, the mega needs to check every hall effect pin for a rising ch
 If there is a change, check the corresponding direction sense pin. Then increment the corresponding MSB/LSB
 */
 void loop() {
-	
-	
+	updateBus(carriageHall, readPin(carriageHall, carriageSense));
+	updateBus(spoolHall, readPin(spoolHall, spoolSense));
+	updateBus(ballastHall, readPin(ballastHall, ballastSense));
 	
 	delayMicroseconds(delayTime);
+	/*
+	serialCounter++;
+	if(serialCounter == 1000){
+		Serial.print("CarriageBus Value: ");
+		Serial.println(carriageBus);
+		Serial.print("SpoolBus Value: ");
+		Serial.println(spoolBus);
+		Serial.print("BallastBus Value: ");
+		Serial.println(ballastBus);
+		serialCounter = 0;
+	}
+	*/
 }
 /*
 reads one of the hall effect pins. Performs a debounce check. 
@@ -90,19 +112,75 @@ int8_t readPin(uint8_t pin, uint8_t sensePin){
 	bool pinRead = digitalRead(pin);
 	//If pin read high and correct debounce count reached, increment parallel bus
 	if(pinRead && getDebounceCount(pin) == debounceThreshhold){
-		digitalRead(sensePin);
+		if(digitalRead(sensePin)){
+			increment = 1;
+		}
+		else{
+			increment  = -1;
+		}
+		updateDebounceCount(pin, -debounceThreshhold);
 	}
 	//If pin read high and insufficient debounce count reached, increment debounce counter
-	else if(pinRead && getDebounceCount(pin) < debounceThreshhold)
-	
+	else if(pinRead && getDebounceCount(pin) < debounceThreshhold){
+		updateDebounceCount(pin, 1);
+	}
 	
 	return increment; 
 }
 /*
 updates the parallel bus. Given LSB, MSB, and increment size.
 */
-void updateBus(uint8_t LSB, uint8_t MSB, int8_t increment){
-	
+void updateBus(uint8_t pin, int8_t increment){
+	if(pin == carriageHall){
+		carriageBus += increment;
+		if(carriageBus > 3){
+			carriageBus = 0;
+		}
+		else if(carriageBus < 0){
+			carriageBus = 3;
+		}
+		writeToBus(carriageLSB, carriageMSB, carriageBus);
+	}
+	else if(pin == spoolHall){
+		spoolBus += increment;
+		if(spoolBus > 3){
+			spoolBus = 0;
+		}
+		else if(spoolBus < 0){
+			spoolBus = 3;
+		}
+		writeToBus(spoolLSB, spoolMSB, spoolBus);
+	}
+	else if(pin == ballastHall){
+		ballastBus += increment;
+		if(ballastBus > 3){
+			ballastBus = 0;
+		}
+		else if(ballastBus < 0){
+			ballastBus = 3;
+		}
+		writeToBus(ballastLSB, ballastMSB, ballastBus);
+	}
+}
+void writeToBus(uint8_t LSBPin, uint8_t MSBPin, uint8_t busVal){
+	switch (busVal){
+		case 0:
+			digitalWrite(LSBPin, LOW);
+			digitalWrite(MSBPin, LOW);
+			break;
+		case 1:
+			digitalWrite(LSBPin, HIGH);
+			digitalWrite(MSBPin, LOW);
+			break;
+		case 2:
+			digitalWrite(LSBPin, LOW);
+			digitalWrite(MSBPin, HIGH);
+			break;
+		case 3:
+			digitalWrite(LSBPin, HIGH);
+			digitalWrite(MSBPin, HIGH);
+			break;
+	}
 }
 
 uint8_t getDebounceCount(uint8_t pin){
@@ -117,17 +195,19 @@ uint8_t getDebounceCount(uint8_t pin){
 	}
 }
 
-void updateDebounceCount(uint8_t pin){
+void updateDebounceCount(uint8_t pin, int8_t increment){
 	if(pin == carriageHall){
-		carriageDebounce++;
+		carriageDebounce += increment;
 	}
 	else if(pin == spoolHall){
-		spoolDebounce++;
+		spoolDebounce += increment;
 	}
 	else if(pin == ballastHall){
-		ballastDebounce++;
+		ballastDebounce += increment;
 	}
 }
+
+
 
 
 
