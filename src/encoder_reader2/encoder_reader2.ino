@@ -48,12 +48,17 @@ uint8_t ballastDebounce =	0;
 
 uint8_t debounceThreshhold = 3;
 
-uint8_t delayTime = 500;
+uint16_t delayTime = 5000;
 
 //Parallel Bus Current data:
-uint8_t carriageBus =	0;
-uint8_t spoolBus =		0;
-uint8_t ballastBus =	0;
+int8_t carriageBus =	0;
+int8_t spoolBus =		0;
+int8_t ballastBus =		0;
+
+//Current Hall Sensor state (hall sensors digitalRead as false when activated):
+bool carriageState =	true;
+bool spoolState =		true;
+bool ballastState = 	true;
 
 //DEBUG:
 long serialCounter = 0;
@@ -85,10 +90,11 @@ As the code loops, the mega needs to check every hall effect pin for a rising ch
 If there is a change, check the corresponding direction sense pin. Then increment the corresponding MSB/LSB
 */
 void loop() {
-	updateBus(carriageHall, readPin(carriageHall, carriageSense));
-	updateBus(spoolHall, readPin(spoolHall, spoolSense));
+//	updateBus(carriageHall, readPin(carriageHall, carriageSense));
+//	updateBus(spoolHall, readPin(spoolHall, spoolSense));
 	updateBus(ballastHall, readPin(ballastHall, ballastSense));
 	
+	//delay(500);
 	delayMicroseconds(delayTime);
 	/*
 	serialCounter++;
@@ -111,7 +117,7 @@ int8_t readPin(uint8_t pin, uint8_t sensePin){
 	int8_t increment = 0;
 	bool pinRead = digitalRead(pin);
 	//If pin read high and correct debounce count reached, increment parallel bus
-	if(pinRead && getDebounceCount(pin) == debounceThreshhold){
+	if(!pinRead && getDebounceCount(pin) == debounceThreshhold && getState(pin)){
 		if(digitalRead(sensePin)){
 			increment = 1;
 		}
@@ -119,12 +125,21 @@ int8_t readPin(uint8_t pin, uint8_t sensePin){
 			increment  = -1;
 		}
 		updateDebounceCount(pin, -debounceThreshhold);
+		updateState(pin);
 	}
 	//If pin read high and insufficient debounce count reached, increment debounce counter
-	else if(pinRead && getDebounceCount(pin) < debounceThreshhold){
+	else if(!pinRead && getDebounceCount(pin) < debounceThreshhold && getState(pin)){
 		updateDebounceCount(pin, 1);
 	}
 	
+	
+	else if(pinRead && getDebounceCount(pin) == debounceThreshhold && !getState(pin)){
+		updateState(pin);
+		updateDebounceCount(pin, -debounceThreshhold);
+	}
+	else if(pinRead && getDebounceCount(pin) < debounceThreshhold && !getState(pin)){
+		updateDebounceCount(pin, 1);
+	}
 	return increment; 
 }
 /*
@@ -162,7 +177,7 @@ void updateBus(uint8_t pin, int8_t increment){
 		writeToBus(ballastLSB, ballastMSB, ballastBus);
 	}
 }
-void writeToBus(uint8_t LSBPin, uint8_t MSBPin, uint8_t busVal){
+void writeToBus(uint8_t LSBPin, uint8_t MSBPin, int8_t busVal){
 	switch (busVal){
 		case 0:
 			digitalWrite(LSBPin, LOW);
@@ -207,7 +222,29 @@ void updateDebounceCount(uint8_t pin, int8_t increment){
 	}
 }
 
+bool getState(uint8_t pin){
+	if(pin == carriageHall){
+		return carriageState;
+	}
+	else if(pin == spoolHall){
+		return spoolState;
+	}
+	else if(pin == ballastHall){
+		return ballastState;
+	}
+}
 
+void updateState(uint8_t pin){
+	if(pin == carriageHall){
+		carriageState = !carriageState;
+	}
+	else if(pin == spoolHall){
+		spoolState = !spoolState;
+	}
+	else if(pin == ballastHall){
+		ballastState = !ballastState;
+	}
+}
 
 
 
