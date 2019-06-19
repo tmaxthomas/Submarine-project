@@ -1,0 +1,45 @@
+SUBMARINE OPERATIONAL LIMITS:
+PWM:
+CARRIAGE SERVO (PIN 2):
+	MIN: 330 (Towards AFT direction)
+	CENTER: 363
+	MAX: 396 (Towards FORE direction)
+
+SPOOL SERVO (PIN 3):
+	MIN: 340 (Spool OUT the tether)
+	CENTER: 374
+	MAX: 410 (Spool IN the tether)
+	
+RUDDER SERVO (PIN 1):
+	MIN: 340 (Steer sub to the RIGHT)
+	CENTER: 395
+	MAX: 470 (Steer sub to the LEFT)
+	
+AFT DIVE PLANES SERVO (PIN 0):
+	MIN: 260 (Planes pointing DOWNWARD as if to DIVE)
+	CENTER: 320
+	MAX: 380 (Planes pointing UPWARD as if to SURFACE)
+	
+FORE DIVE PLANES SERVO (PIN 14):
+	MIN: 260 (Planes pointing DOWNWARD as if to SURFACE)
+	CENTER: 355
+	MAX: 425 (Planes pointing UPWARD as if to DIVE)
+	
+HEADLIGHTS (PIN 4):
+	MIN: 0
+	MAX: 4096
+	
+DRIVE MOTOR ESC (PIN 7):
+	ARM: 350
+	
+	MIN:
+	CENTER: 350
+	MAX:
+	
+BALLAST MOTOR ESC (PIN 15):
+	ARM: 350
+	
+	MIN:
+	CENTER: 350 (dead zone: 345 to 355)
+	MAX:
+	

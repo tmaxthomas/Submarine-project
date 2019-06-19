@@ -1,47 +1,23 @@
-/*************************************************** 
-  This is an example for our Adafruit 16-channel PWM & Servo driver
-  Servo test - this will drive 8 servos, one after the other on the
-  first 8 pins of the PCA9685
-
-  Pick one up today in the adafruit shop!
-  ------> http://www.adafruit.com/products/815
-  
-  These drivers use I2C to communicate, 2 pins are required to  
-  interface.
-
-  Adafruit invests time and resources providing this open source code, 
-  please support Adafruit and open-source hardware by purchasing 
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.  
-  BSD license, all text above must be included in any redistribution
- ****************************************************/
 
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
 // called this way, it uses the default address 0x40
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-// you can also call it with a different address you want
-//Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x41);
-// you can also call it with a different address and I2C interface
-//Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(&Wire, 0x40);
 
-// Depending on your servo make, the pulse width min and max may vary, you 
-// want these to be as small/large as possible without hitting the hard stop
-// for max range. You'll have to tweak them as necessary to match the servos you
-// have!
 #define SERVOMIN  150 // this is the 'minimum' pulse length count (out of 4096)
 #define SERVOMAX  600 // this is the 'maximum' pulse length count (out of 4096)
 
-// our servo # counter
 uint8_t servonum = 0;
 uint16_t armPulse = 331;
+uint16_t setPulse = 0;
 uint8_t mode = 0;
 
+String serialData = "";
+ 
 void setup() {
   Serial.begin(9600);
-  Serial.println("8 channel Servo test!");
+  Serial.println("PWM I2C Board Tester");
 
   pwm.begin();
   
@@ -49,11 +25,69 @@ void setup() {
 
   delay(10);
   
+  Serial.println("Arming ESC(s)...");
   //ARM ESC HERE:
-  pwm.setPWM(servonum, 0, armPulse);
+ // pwm.setPWM(servonum, 0, armPulse);
   delay(4000);
-  
+  Serial.println("ESC(s) Armed, Program ready!");
 }
+
+void loop() {
+	if(Serial.available() > 0){
+		/*
+		MODES:
+		0 = Init
+		1 = Set PWM Port
+		2 = Set PWM Pulsewidth to PWM Port from Mode 1
+		
+		*/
+		serialData = Serial.readString();
+		if(mode == 0){
+			//init mode
+			if(serialData.equals("Set Port")){
+				mode = 1;
+        Serial.println("In Port Setting Mode: Type a valid port number now");
+			}
+			else if(serialData.equals("Set Pulse")){
+				mode = 2;
+        Serial.println("In Pulse Setting mode: Type a valid Pulse number now");
+			}
+		}
+		else if(mode == 1){
+			if(serialData.equals("Set New")){
+				mode = 0;
+			}
+			else{
+				//here, Select the port using conversion to uint_8t
+				servonum = serialData.toInt();
+				Serial.print("PWM Port set to: ");
+				Serial.println(servonum);	
+			}
+			
+		}
+		else if(mode == 2){
+			if(serialData.equals("Set New")){
+				mode = 0;
+			}
+			else{
+				//here, perform conversion to uint_16t of any input data as this is direct pulse width to servo writes
+				setPulse = serialData.toInt();
+				Serial.print("Writing Pulsewidth of: ");
+				Serial.print(setPulse);
+				Serial.print(" to Port Pin: ");
+				Serial.println(servonum);
+			
+				//PWM write:
+				pwm.setPWM(servonum, 0, setPulse);
+			}
+		}
+	}	
+	delay(20);
+}
+
+
+
+
 
 // you can use this function if you'd like to set the pulse length in seconds
 // e.g. setServoPulse(0, 0.001) is a ~1 millisecond pulse width. its not precise!
@@ -69,18 +103,4 @@ void setServoPulse(uint8_t n, double pulse) {
   pulse /= pulselength;
   Serial.println(pulse);
   pwm.setPWM(n, 0, pulse);
-}
-
-void loop() {
-	if(Serial.available() > 0){
-	  if(mode == 0){
-		  //init mode
-		  if( == "Drive mode"){
-			  mode = 1;
-		  }
-		}
-	  else if(mode == 1){
-		  //here, perform conversion to uint_16t of any input data as this is direct pulse width to servo writes
-	  }
-  }	  
 }
