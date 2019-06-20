@@ -1,14 +1,72 @@
+/*
+Submarine Arduino Mega Hub Code
+
+Handles the transmission and reception of Serial data packets.
+Writes all PWM data to the PWM Driver Board.
+Reads the encoder bus.
+Reads all analog sensors:
+	-Water sensors
+	-Temperature sensors
+	-Potentiometer Feedback Sensors
+Runs the control algorithm for interpreting and repositioning mechanical systems
+
+*/
+
 #include <Wire.h>
 #include "../common.h"
+#include <Adafruit_PWMServoDriver.h>
 
 /******************
  * MACROS/DEFINES *
  ******************/
 
-//Length of cycle, in milliseconds
-#define D_MILS 50
-// I2C address of the PWM controller
-#define PWM_ADDR 0x40
+//Length of cycle, in microseconds (min = 10, max  = 15000)
+#define D_MILS 10000
+
+/*************
+* PWM LIMITS *
+*************/
+
+//Carriage. PWM below Center sends carriage towards aft. 
+#define CARRIAGE_MIN		330
+#define CARRIAGE_CENTER 	363
+#define CARRIAGE_MAX		396
+
+//Spool. PWM below Center Spools out the tether
+#define SPOOL_MIN 			340
+#define SPOOL_CENTER 		374
+#define SPOOL_MAX 			410
+
+//Rudder Servo. PWM below Center Steers sub to right
+#define RUDDER_MIN 			340 
+#define RUDDER_CENTER 		395
+#define RUDDER_MAX 			470
+
+//Aft Dive Servo. PWM below Center points planes downwards as if to Dive.
+#define AFT_DIVE_MIN 		260
+#define AFT_DIVE_CENTER 	320
+#define AFT_DIVE_MAX 		380
+
+//Fore Dive Servo. PWM below Center points planes downwards as if to surface.
+#define FORE_DIVE_MIN 		260
+#define FORE_DIVE_CENTER 	355
+#define FORE_DIVE_MAX 		425
+
+//Headlights. 0 is off, 4096 max on
+#define HEADLIGHT_MIN 		0
+#define HEADLIGHT_MAX 		4096
+
+//Drive Motor ESC. TODO: check directions
+#define DRIVE_MIN 			300
+#define DRIVE_CENTER 		350
+#define DRIVE_MAX 			400
+
+//Ballast Motor ESC. PWM below center pushes water out of ballast. 
+#define BALLAST_MIN 		300
+#define BALLAST_CENTER 		350
+#define BALLAST_MAX 		400
+
+
 
 /***********
  * STRUCTS *
@@ -30,6 +88,8 @@ struct pid_t {
 
 struct in_pack_t in_packet;
 struct out_pack_t out_packet;
+
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 // Other sensor/misc data
 uint8_t flooded;
@@ -64,22 +124,10 @@ uint16_t update_pid(struct pid_t c, uint16_t set_pt, uint16_t val) {
     return (err * c.p) + (c.total_err * c.i) - (d_val * c.d);
 }
 
-// Runs initialization code for the PWM controller
-void pwm_controller_init() {
-    // Put the controller to sleep in order to prep for prescale
-    pwm_write(0x00, 0x10);
-
-    //Write prescale
-    pwm_write(0xFE, 0x79);
-
-    // Wake the controller back up and turn auto-increment on
-    pwm_write(0x00, 0x20);
-}
-
 // Reads and records updated encoder values off of the parallel busses coming from
 // the encoder Nanos
 inline void read_encoders() {
-    // Pins 34 (PORTC 3) to 30 (PORTC 7) and 49 (PORTL 0) to 46 (PORTL 3)
+    
     uint8_t ballast_raw, spool_raw, shuttle_raw;
     uint16_t aggregated_raw = ((PORTC & 0b11111000) << 1) + (PORTL & 0b1111);
     ballast_raw = aggregated_raw & 0b111;
@@ -91,19 +139,8 @@ inline void read_encoders() {
     increment(&shuttle, shuttle_raw);
 }
 
-void pwm_update(uint8_t num, uint16_t val) {
-    val = (val < 4095) ? val : 4096;
-
-    // Write a whole bunch of magic
-    // Refer to the PCA9685 datasheet for more information
-    Wire.beginTransmission(PWM_ADDR);
-    uint8_t data[5] = {0x06 + 4*num, 0, 0, val, val >> 8};
-    Wire.write(data, 5);
-    Wire.endTransmission();
-}
 
 // Emergency abort routine
-// (just shuts down the Mega and lets the backup controller do its thing)
 void emerg_abort() {
     for(;;);
 }
@@ -115,7 +152,11 @@ void emerg_abort() {
 void setup() {
     Serial.begin(BAUD_RATE);     //USB
     Serial1.begin(BAUD_RATE);    //Radio/mini-sub
-
+	
+	//Initialize the PWM Driver Board
+	pwm.begin();
+	pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+	
     pid[0] = { .p = 0.1, .i = 0, .d = 0 }; //Ballast PID
     pid[1] = { .p = 0.1, .i = 0, .d = 0 }; //Spool PID
 
