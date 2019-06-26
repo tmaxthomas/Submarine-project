@@ -12,6 +12,41 @@ Runs the control algorithm for interpreting and repositioning mechanical systems
 
 */
 
+/*
+Program Flow:
+
+Declare variables, include libraries, define constants
+
+Setup:
+	-initialize Serial1
+	-initialize PWM driver board
+	-Initialize Radio
+	-set pinmodes, where necessary
+	
+Loop:
+	-Start by checking the radio for a new packet. If present, update local setpoints with new packet data
+	-begin read operations:
+		-Read encoder bus, increment or decriment as necessary
+		-Read Potentiometers
+		-Read Temperature Sensors
+		-Read water sensor
+		
+	-begin write operations
+		-send servo writes, if new setpoints have been assigned
+		-Send new headlight value, if assigned
+		-Send ballast ESC write with PI control
+		-Send Spool/Carriage writes:
+			-Start by checking if setpoint != current spool encoder count
+			-If it is different, then write appropriate direction to spool servo (don't move otherwise)
+				-check current spool encoder count against carriage encoder count (with scaling factor for spool counts:carriage counts per rev of spool)
+					(use iterating factor - number of times the carriage has made a full travel)
+					Determine where the carriage needs to be (from spool count) vs where it is. The spool count acts as the carriage setpoint
+						Assign appropriate write, if necessary 
+	
+	-assemble new transmit data packet
+		-write new data packet
+
+*/
 #include <Wire.h>
 #include "../common.h"
 #include <Adafruit_PWMServoDriver.h>
@@ -86,6 +121,7 @@ struct pid_t {
  * GLOBALS *
  ***********/
 
+//NRF Radio limited to 32bytes in the read buffer. plan accordingly. 
 struct in_pack_t in_packet;
 struct out_pack_t out_packet;
 
