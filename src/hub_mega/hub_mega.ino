@@ -20,11 +20,10 @@ Declare variables, include libraries, define constants
 Setup:
 	-initialize Serial1
 	-initialize PWM driver board
-	-Initialize Radio
 	-set pinmodes, where necessary
 	
 Loop:
-	-Start by checking the radio for a new packet. If present, update local setpoints with new packet data
+	-Start by checking the serial bus for new packet. If present, update local setpoints with new packet data
 	-begin read operations:
 		-Read encoder bus, increment or decriment as necessary
 		-Read Potentiometers
@@ -44,16 +43,20 @@ Loop:
 						Assign appropriate write, if necessary 
 	
 	-assemble new transmit data packet
-		-write new data packet
+		-write new data packet to Serial bus
 
 */
+
+/***********
+* INCLUDES *
+***********/
 #include <Wire.h>
 #include "../common.h"
 #include <Adafruit_PWMServoDriver.h>
 
 /******************
  * MACROS/DEFINES *
- ******************/
+ *****************/
 
 //Length of cycle, in microseconds (min = 10, max  = 15000)
 #define D_MILS 10000
