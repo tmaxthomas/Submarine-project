@@ -46,6 +46,7 @@ void loop() {
 				mode = 2;
 				Serial.println("In Pulse Setting mode: Type a valid Pulse number now");
 			}
+     printData();
 		}
 		else if(mode == 1){
 			if(serialData.equals("Set New")){
@@ -57,7 +58,7 @@ void loop() {
 				Serial.print("PWM Port set to: ");
 				Serial.println(servonum);	
 			}
-			
+			printData();
 		}
 		else if(mode == 2){
 			if(serialData.equals("Set New")){
@@ -73,31 +74,30 @@ void loop() {
 			
 				//PWM write:
 				pwm.setPWM(servonum, 0, setPulse);
+        printData();
 			}
 		}
-		else if(serialData.equals("print")){
-			//turn on temp sensor for reads
-			digitalWrite(52, HIGH);
-			
-			Serial.print("Water Sensor: ");
-			Serial.println(analogRead(5));
-			Serial.print("Motor Temp: ");
-			Serial.println(analogRead(0));
-			Serial.print("Rudder Potentiometer: ");
-			Serial.println(analogRead(4));
-			Serial.print("Aft Dive Potentiometer: ");
-			Serial.println(analogRead(1));
-			Serial.print("Fore Dive Potentiometer: ");
-			Serial.println(analogRead(12));
-			Serial.print("Battery Voltage: ");
-			Serial.println(analogRead(15));
-			
-			//turn off temp sensor after reading
-			digitalWrite(52, LOW); 
-			
-		}
-	}	
+	}
 	delay(20);
 }
 
-
+void printData(){
+  //turn on temp sensor for reads
+      digitalWrite(52, HIGH);
+      
+      Serial.print("Water Sensor: ");
+      Serial.println(analogRead(5));
+      Serial.print("Motor Temp: ");
+      Serial.println(analogRead(0));
+      Serial.print("Rudder Potentiometer: ");
+      Serial.println(analogRead(4));
+      Serial.print("Aft Dive Potentiometer: ");
+      Serial.println(analogRead(1));
+      Serial.print("Fore Dive Potentiometer: ");
+      Serial.println(analogRead(12));
+      Serial.print("Battery Voltage: ");
+      Serial.println(analogRead(15));
+      
+      //turn off temp sensor after reading
+      digitalWrite(52, LOW); 
+}

@@ -33,7 +33,7 @@ void loop() {
 		serialData = Serial.readString();
 		
 		if(serialData.equals("w")){
-			pwm.setPWM(3, 0, 385);
+			pwm.setPWM(3, 0, 390);
 			pwm.setPWM(2, 0, pulse);
 		}
 		else if(serialData.equals("s")){

@@ -77,6 +77,7 @@ void loop() {
 	Serial.println(digitalRead(12));
 	Serial.print("Direction Sense Ballast: ");
 	Serial.println(digitalRead(2));
+  Serial.println();
 	
 	delay(500);
 }
