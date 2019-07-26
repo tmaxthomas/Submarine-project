@@ -194,6 +194,7 @@ void loop() {
 					else if(serialData.equals("s")){
 						pwm.setPWM(SPOOL_SERVO, 0, 374);
 						pwm.setPWM(CARRIAGE_SERVO, 0, 363);
+						state = 0;
 					}
 					//spool out
 					else if(serialData.equals("r")){

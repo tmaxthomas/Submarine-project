@@ -12,7 +12,7 @@ SPOOL SERVO (PIN 3):
 	
 RUDDER SERVO (PIN 1):
 	MIN: 340 (Steer sub to the RIGHT)
-	CENTER: 395
+	CENTER: 400
 	MAX: 470 (Steer sub to the LEFT)
 	
 AFT DIVE PLANES SERVO (PIN 0):
@@ -21,9 +21,9 @@ AFT DIVE PLANES SERVO (PIN 0):
 	MAX: 380 (Planes pointing UPWARD as if to SURFACE)
 	
 FORE DIVE PLANES SERVO (PIN 14):
-	MIN: 260 (Planes pointing DOWNWARD as if to SURFACE)
-	CENTER: 355
-	MAX: 425 (Planes pointing UPWARD as if to DIVE)
+	MIN: 290 (Planes pointing DOWNWARD as if to SURFACE)
+	CENTER: 390
+	MAX: 460 (Planes pointing UPWARD as if to DIVE)
 	
 HEADLIGHTS (PIN 4):
 	MIN: 0
