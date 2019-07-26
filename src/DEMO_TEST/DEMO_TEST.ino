@@ -17,19 +17,24 @@ const uint8_t DRIVE_ESC = 		7;
 const uint8_t FORE_DIVE_SERVO =	14;
 const uint8_t BALLAST_ESC =		15;
 
+const uint8_t EMAG = 			47;
+
 
 uint16_t pulse = 0;
 bool isLoop = true;
 String serialData = "";
+uint8_t state = 0;
  
 void setup() {
 	Serial.begin(9600);
 	Serial.println("SUBMARINE DIAG PROGRAM STARTING");
 
+	pinMode(EMAG, OUTPUT);
+	
 	pwm.begin();
 	pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
-	delay(500);
+	delay(2500);
   
 	Serial.println("Arming Ballast ESC...");
 	delay(1000);
@@ -162,46 +167,66 @@ void loop() {
 			Serial.println("Exiting headlights mode");
 		}
 		
-		else if(serialData.equals("Spool"){
+		else if(serialData.equals("EMAG")){
+			digitalWrite(EMAG, HIGH);
+			delay(1000);
+			digitalWrite(EMAG, LOW);
+		}
+		
+		else if(serialData.equals("Spool")){
 			Serial.println("Entering Spool Mode");
 			while(isLoop){
 				if(Serial.available() > 0){
 					serialData = Serial.readString();
+					//spool in
 					if(serialData.equals("w")){
-						pwm.setPWM(3, 0, 390);
-						pwm.setPWM(2, 0, 330);
-					}
-					else if(serialData.equals("s")){
-						pwm.setPWM(3, 0, 374);
-						pwm.setPWM(2, 0, 363);
-					}
-					else if(serialData.equals("r")){
-						pwm.setPWM(3, 0, 355);
-						if(state == 0){
-							pulse = 396;
-							pwm.setPWM(2, 0, pulse);
-							state = 1;
+						pwm.setPWM(SPOOL_SERVO, 0, 390);
+						if(state == 1){
+							pwm.setPWM(CARRIAGE_SERVO, 0, 330);
+							state = 0;
 						}
 						else{
-							pulse = 330;
-							pwm.setPWM(2, 0, pulse);
+							pwm.setPWM(CARRIAGE_SERVO, 0, 396);
+							state = 1;
+						}
+					}
+					//stop spooling
+					else if(serialData.equals("s")){
+						pwm.setPWM(SPOOL_SERVO, 0, 374);
+						pwm.setPWM(CARRIAGE_SERVO, 0, 363);
+					}
+					//spool out
+					else if(serialData.equals("r")){
+						pwm.setPWM(SPOOL_SERVO, 0, 355);
+						if(state == 1){
+							pwm.setPWM(CARRIAGE_SERVO, 0, 330);
 							state = 0;
+						}
+						else{
+							pwm.setPWM(CARRIAGE_SERVO, 0, 396);
+							state = 1;
 						}
 					}
 					else if(serialData.equals("f")){
-						if(state == 0){
-							pulse = 396;
-							pwm.setPWM(2, 0, pulse);
-							state = 1;
-						}
-						else{
-							pulse = 330;
-							pwm.setPWM(2, 0, pulse);
+						if(state == 1){
+							pwm.setPWM(CARRIAGE_SERVO, 0, 330);
 							state = 0;
 						}
+						else{
+							pwm.setPWM(CARRIAGE_SERVO, 0, 396);
+							state = 1;
+						}
+					}
+					else if(serialData.equals("Stop")){
+						isLoop = false;
+						Serial.println("Exiting Spool Mode");
+						pwm.setPWM(SPOOL_SERVO, 0, 374);
+						pwm.setPWM(CARRIAGE_SERVO, 0, 363);
 					}
 				}
 			}
+			isLoop = true;
+		}
 	}
 	delay(5);
 }
