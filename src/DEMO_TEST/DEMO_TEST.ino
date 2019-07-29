@@ -53,17 +53,17 @@ void setup() {
 	delay(500);
 	pwm.setPWM(AFT_DIVE_SERVO, 0, 320);
 	delay(200);
-	pwm.setPWM(FORE_DIVE_SERVO, 0, 355);
+	pwm.setPWM(FORE_DIVE_SERVO, 0, 390);
 	delay(200);
-	pwm.setPWM(RUDDER_SERVO, 0, 395);
+	pwm.setPWM(RUDDER_SERVO, 0, 400);
   
 	//ensure spool is not moving
 	pwm.setPWM(SPOOL_SERVO, 0, 374);
-	pwm.setPWM(CARRIAGE_SERVO, 0, 363);
+	pwm.setPWM(CARRIAGE_SERVO, 0, 364);
 	
 	delay(1000);
 	Serial.println("READY");
-	pwm.setPWM(STATUS_LED, 0 , 4096);
+	pwm.setPWM(STATUS_LED, 0 , 4000);
   
 }
 
@@ -222,7 +222,7 @@ void loop() {
 						isLoop = false;
 						Serial.println("Exiting Spool Mode");
 						pwm.setPWM(SPOOL_SERVO, 0, 374);
-						pwm.setPWM(CARRIAGE_SERVO, 0, 363);
+						pwm.setPWM(CARRIAGE_SERVO, 0, 364);
 					}
 				}
 			}
