@@ -27,11 +27,11 @@ FORE DIVE PLANES SERVO (PIN 14):
 	
 HEADLIGHTS (PIN 4):
 	MIN: 0
-	MAX: 4096
+	MAX: 4095
 	
 STATUS LED (PIN 5):
 	MIN: 0
-	MAX: 4096
+	MAX: 4095
 	
 BONUS PWM (PIN 6)
 	N/C
@@ -39,14 +39,14 @@ BONUS PWM (PIN 6)
 DRIVE MOTOR ESC (PIN 7):
 	ARM: 350
 	
-	MIN: 280
+	MIN: 250 (max forward)
 	CENTER: 350 (dead zone: 345 to 355)
-	MAX: 410
+	MAX: 450 (max reverse)
 	
 BALLAST MOTOR ESC (PIN 15):
 	ARM: 350
 	
-	MIN: 300
+	MIN: 300 (push water out)
 	CENTER: 350 (dead zone: 345 to 355)
-	MAX: 400
+	MAX: 400 (pull water in)
 	

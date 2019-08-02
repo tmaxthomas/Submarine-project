@@ -16,7 +16,6 @@ const uint8_t STATUS_LED =		5;
 const uint8_t DRIVE_ESC = 		7;
 const uint8_t FORE_DIVE_SERVO =	14;
 const uint8_t BALLAST_ESC =		15;
-
 const uint8_t EMAG = 			47;
 
 

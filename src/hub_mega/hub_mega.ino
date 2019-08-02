@@ -18,7 +18,7 @@ Program Flow:
 Declare variables, include libraries, define constants
 
 Setup:
-	-initialize Serial1
+	-initialize Serial and Serial1
 	-initialize PWM driver board
 	-set pinmodes, where necessary
 	
@@ -55,139 +55,114 @@ Loop:
 #include <Adafruit_PWMServoDriver.h>
 
 /******************
+* PIN DEFINITIONS *
+******************/
+const uint8_t AFT_DIVE_SERVO =	0;
+const uint8_t RUDDER_SERVO = 	1;
+const uint8_t CARRIAGE_SERVO = 	2;
+const uint8_t SPOOL_SERVO = 	3;
+const uint8_t HEADLIGHTS = 		4;
+const uint8_t STATUS_LED =		5;
+const uint8_t DRIVE_ESC = 		7;
+const uint8_t FORE_DIVE_SERVO =	14;
+const uint8_t BALLAST_ESC =		15;
+const uint8_t EMAG = 			47;
+
+/******************
  * MACROS/DEFINES *
  *****************/
-
-//Length of cycle, in microseconds (min = 10, max  = 15000)
-#define D_MILS 10000
+const uint16_t BAUD_RATE = 					115200;
+const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
 
 /*************
 * PWM LIMITS *
 *************/
 
 //Carriage. PWM below Center sends carriage towards aft. 
-#define CARRIAGE_MIN		330
-#define CARRIAGE_CENTER 	363
-#define CARRIAGE_MAX		396
+const uint16_t CARRIAGE_MIN = 		330;
+const uint16_t CARRIAGE_CENTER =  	364;
+const uint16_t CARRIAGE_MAX	=		396;
 
 //Spool. PWM below Center Spools out the tether
-#define SPOOL_MIN 			340
-#define SPOOL_CENTER 		374
-#define SPOOL_MAX 			410
+const uint16_t SPOOL_MIN =			340;
+const uint16_t SPOOL_CENTER = 		374;
+const uint16_t SPOOL_MAX =			410;
 
 //Rudder Servo. PWM below Center Steers sub to right
-#define RUDDER_MIN 			340 
-#define RUDDER_CENTER 		395
-#define RUDDER_MAX 			470
+const uint16_t RUDDER_MIN =			340;
+const uint16_t RUDDER_CENTER =		400;
+const uint16_t RUDDER_MAX =			470;
 
 //Aft Dive Servo. PWM below Center points planes downwards as if to Dive.
-#define AFT_DIVE_MIN 		260
-#define AFT_DIVE_CENTER 	320
-#define AFT_DIVE_MAX 		380
+const uint16_t AFT_DIVE_MIN =		260;
+const uint16_t AFT_DIVE_CENTER =	320;
+const uint16_t AFT_DIVE_MAX =		380;
 
 //Fore Dive Servo. PWM below Center points planes downwards as if to surface.
-#define FORE_DIVE_MIN 		260
-#define FORE_DIVE_CENTER 	355
-#define FORE_DIVE_MAX 		425
+const uint16_t FORE_DIVE_MIN =		290;
+const uint16_t FORE_DIVE_CENTER =	390;
+const uint16_t FORE_DIVE_MAX =		460;
 
-//Headlights. 0 is off, 4096 max on
-#define HEADLIGHT_MIN 		0
-#define HEADLIGHT_MAX 		4096
+//Headlights. 0 is off, 4095 max on
+const uint16_t HEADLIGHT_MIN =		0;
+const uint16_t HEADLIGHT_MAX =		4095;
 
 //Drive Motor ESC. TODO: check directions
-#define DRIVE_MIN 			300
-#define DRIVE_CENTER 		350
-#define DRIVE_MAX 			400
+const uint16_t DRIVE_MIN =			280;
+const uint16_t DRIVE_CENTER =		350;
+const uint16_t DRIVE_MAX =			420;
 
 //Ballast Motor ESC. PWM below center pushes water out of ballast. 
-#define BALLAST_MIN 		300
-#define BALLAST_CENTER 		350
-#define BALLAST_MAX 		400
+const uint16_t BALLAST_MIN =		300;
+const uint16_t BALLAST_CENTER =		350;
+const uint16_t BALLAST_MAX =		400;
 
+//Status LED. 0 is off, 4095 is max on
+const uint16_t STATUS_MIN = 		0;
+const uint16_t STATUS_MAX = 		4095;
 
+/***************************
+* SEND/RECEIVE PACKET DATA *
+***************************/
+//StationPacket: Setpoint Data from the groundstation (start at Neutral on all)
+uint16_t driveSetpoint = 			350;
+uint16_t rudderSetpoint = 			400;
+uint16_t aftDiveSetpoint = 			320;
+uint16_t foreDiveSetpoint = 		390;
+uint16_t headLightSetpoint = 		0;
+uint16_t spoolSetpoint = 			0;
+uint16_t ballastSetpoint = 			0;
 
-/***********
- * STRUCTS *
- ***********/
+//temp values used for unit conversion in setpoint assignment
+int8_t driveDelta = 				0;
+int8_t rudderDelta = 				0;
+int8_t aftDiveDelta = 				0;
+int8_t foreDiveDelta = 				0;
+	
+const uint8_t STATION_PACKET_SIZE = 9;
+byte currentStationData[STATION_PACKET_SIZE];
 
-struct encoder_t {
-    uint16_t pos, set, old;
-    bool dir;
-} spool, ballast, shuttle;
+//SubPacket: Current Running Data of the Submarine. units match those of SubPacket in spreadsheet
+int8_t rudderPositionCurrent = 		0;
+int8_t aftDivePositionCurrent = 	0;
+int8_t foreDivePositionCurrent = 	0;
+uint16_t spoolPositionCurrent = 	0;
+uint16_t ballastPositionCurrent = 	0;
+uint8_t motorTempCurrent = 			0;
+uint8_t waterSenseCurrent = 		0;
+uint8_t batteryVoltage = 			0; 
 
-struct pid_t {
-    uint16_t p, i, d;
-    uint16_t total_err, old_val;
-} pid[2];
+const uint8_t SUB_PACKET_SIZE = 	10;
+byte currentSubData[SUB_PACKET_SIZE];
 
-/***********
- * GLOBALS *
- ***********/
+/**********
+* GLOBALS *
+**********/
+bool isUpdated =					false;
+uint8_t updateSpoolBallastCounter = 0;
+uint8_t emagCounter = 				0;
 
-//NRF Radio limited to 32bytes in the read buffer. plan accordingly. 
-struct in_pack_t in_packet;
-struct out_pack_t out_packet;
-
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-
-// Other sensor/misc data
-uint8_t flooded;
-int8_t shaft_voltage;
-uint16_t fore_plane_set, aft_plane_set, rudder_set;
-uint32_t old_mils;
-
-/*************
- * FUNCTIONS *
- *************/
-
-void increment(struct encoder_t *enc, uint8_t val) {
-    uint8_t delta = val - enc->old;
-    enc->old = val;
-    enc->pos += (enc->dir ? delta : -delta);
-}
-
-void pwm_write(uint8_t addr, uint8_t val) {
-    Wire.beginTransmission(PWM_ADDR);
-    Wire.write(addr);
-    Wire.write(val);
-    Wire.endTransmission();
-}
-
-// Updates PID controller and returns updated motor power percentage
-// NOTE: Loops need to be tuned to produce values in the range 0 : 16,383
-uint16_t update_pid(struct pid_t c, uint16_t set_pt, uint16_t val) {
-    uint16_t err = set_pt - val;
-    c.total_err += err;
-    uint16_t d_val = c.old_val - val;
-    c.old_val = val;
-    return (err * c.p) + (c.total_err * c.i) - (d_val * c.d);
-}
-
-// Reads and records updated encoder values off of the parallel busses coming from
-// the encoder Nanos
-inline void read_encoders() {
-    
-    uint8_t ballast_raw, spool_raw, shuttle_raw;
-    uint16_t aggregated_raw = ((PORTC & 0b11111000) << 1) + (PORTL & 0b1111);
-    ballast_raw = aggregated_raw & 0b111;
-    spool_raw = (aggregated_raw >> 3) & 0b111;
-    shuttle_raw = (aggregated_raw >> 6) & 0b111;
-
-    increment(&ballast, ballast_raw);
-    increment(&spool, spool_raw);
-    increment(&shuttle, shuttle_raw);
-}
-
-
-// Emergency abort routine
-void emerg_abort() {
-    for(;;);
-}
-
-/**************
- * SETUP/LOOP *
- **************/
-
+//Setup Routine
 void setup() {
     Serial.begin(BAUD_RATE);     //USB
     Serial1.begin(BAUD_RATE);    //Radio/mini-sub
@@ -196,75 +171,123 @@ void setup() {
 	pwm.begin();
 	pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 	
-    pid[0] = { .p = 0.1, .i = 0, .d = 0 }; //Ballast PID
-    pid[1] = { .p = 0.1, .i = 0, .d = 0 }; //Spool PID
+	delay(200);
+	
+	//turn on status LED to indicate ready operation
+	pwm.setPWM(STATUS_LED, 0, STATUS_MAX);
 
-    // Register config
-    DDRA &= 0b00000000;
-    DDRC &= 0b00000000;
-    DDRG &= 0b00000111;
-    DDRL &= 0b00000000;
 }
 
+//Loop Routine
 void loop() {
-    old_mils = millis();
-
-    // Recieve packet from groundstation
-    Serial.readBytes(&in_packet, sizeof(in_packet));
-
-    // Confirm packet integrity
-    uint8_t checksum_verify = 0,
-            *pack_ptr = (uint8_t *) &in_packet;
-    for (int i = 0; i < sizeof(in_packet); i++) {
-        checksum_verify ^= pack_ptr[i];
-    }
-
-    if (!checksum_verify) {
-        shaft_voltage = in_packet.shaft_voltage;
-        ballast.set = in_packet.ballast_set;
-        spool.set = in_packet.spool_set;
-        fore_plane_set = in_packet.fore_plane_set;
-        aft_plane_set = in_packet.aft_plane_set;
-        rudder_set = in_packet.rudder_set;
-    }
-
-    // TODO: Determine if this is actually a todo
-    // TODO: Redo flood determination code
-    // Read flooding data and act accordingly
-    flooded = PORTG;
-    if (flooded) emerg_abort();
-
-    read_encoders();
-
-    pwm_update(0, shaft_voltage << 4);
-    pwm_update(1, update_pid(pid[0], ballast_set, ballast_pos));
-    pwm_update(2, fore_plane_set << 4); //Fore dive planes
-    pwm_update(3, aft_plane_set << 4); //Aft dive planes
-    pwm_update(4, rudder_set << 4); //Aft rudder
-    pwm_update(5, update_pid(pid[1], spool_set, spool_pos));
-
-    // TODO: Figure out what the heck we're doing with the running lights
-
-
-    // Populate packet with data
-    out_packet.ballast_pos = ballast_pos;
-    out_packet.spool_pos = spool_pos;
-    out_packet.flooded = flooded;
-    out_packet.shaft_voltage = shaft_voltage;
-
-    // Compute and append checksum
-    out_packet.checksum = 0;
-    pack_ptr = (uint8_t *) &out_packet;
-    for (uint8_t i = 0; i < sizeof(out_packet) - 1; i++) {
-        out_packet.checksum ^= pack_ptr[i];
-    }
-
-    Serial.write(&out_packet, sizeof(out_packet));
-
-    // Yes, this hammers the CPU... but since we're one process, running in real mode, it doesn't
-    // matter
-    int new_mils;
-    while ((new_mils = millis()) - old_mils < D_MILS) {
-        old_mils = new_mils;
-    }
+	//enter if the sub has received a serial packet from the mini sub
+    if(Serial1.available()>0){
+		//wait a few ms for the data to be received
+		delay(3);
+		
+		//Read the serial data
+		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
+			currentStationData[i] = Serial.read();
+		}
+		
+		/*
+		Assign to relevant variables with unit conversion
+		CurrentStationData follows the units laid out in the spreadsheet.
+		local setpoints are all in pwm duty cycle, except spool and ballast setpoints
+		which are given as direct encoder counts
+		*/
+		driveDelta = currentStationData[0];
+		driveSetpoint = DRIVE_CENTER + driveDelta;
+		
+		rudderDelta = currentStationData[1];
+		rudderSetpoint = RUDDER_CENTER + rudderDelta;
+		
+		aftDiveDelta = currentStationData[2];
+		aftDiveSetpoint = AFT_DIVE_CENTER + aftDiveDelta;
+		
+		foreDiveDelta = currentStationData[3];
+		foreDiveSetpoint = FORE_DIVE_CENTER + foreDiveDelta;
+		
+		headLightSetpoint = currentStationData[4] * 40;
+		
+		spoolSetpoint = 0;
+		spoolSetpoint = currentStationData[5];
+		spoolSetpoint = spoolSetpoint << 8;
+		spoolSetpoint = spoolSetpoint | currentStationData[6];
+		
+		ballastSetpoint = 0;
+		ballastSetpoint = currentStationData[7];
+		ballastSetpoint = ballastSetpoint << 8;
+		ballastSetpoint = ballastSetpoint | currentStationData[8];
+		
+		/*
+		Now construct the return serial packet and write it
+		this way the sub only transmits data when it receives it,
+		which allows for external timing control
+		*/
+		
+		currentSubData[0] = rudderPositionCurrent;
+		currentSubData[1] = aftDivePositionCurrent;
+		currentSubData[2] = foreDivePositionCurrent;
+		currentSubData[3] = spoolPositionCurrent >> 8;
+		currentSubData[4] = spoolPositionCurrent;
+		currentSubData[5] = ballastPositionCurrent >> 8;
+		currentSubData[6] = ballastPositionCurrent;
+		currentSubData[7] = motorTempCurrent;
+		currentSubData[8] = waterSenseCurrent;
+		
+		//Write the serial data:
+		Serial1.write(currentSubData, SUB_PACKET_SIZE);
+		
+		isUpdated = true;
+	}
+	
+	//Update the setpoints if new data has been received:
+	if(isUpdated){
+		/*
+		Direct PWM Writes: drive, rudder, aft Dive, fore dive, headlights
+		Ballast and Spool handled in separate algo
+		*/
+		if(!(driveSetpoint > DRIVE_MAX) && !(driveSetpoint < DRIVE_MIN)){
+			pwm.setPWM(DRIVE_ESC, 0, driveSetpoint);	
+		}
+		if(!(rudderSetpoint > RUDDER_MAX) && !(rudderSetpoint < RUDDER_MIN)){
+			pwm.setPWM(RUDDER_SERVO, 0, rudderSetpoint);	
+		}
+		if(!(aftDiveSetpoint > AFT_DIVE_MAX) && !(aftDiveSetpoint < AFT_DIVE_MIN)){
+			pwm.setPWM(AFT_DIVE_SERVO, 0, aftDiveSetpoint);	
+		}
+		if(!(foreDiveSetpoint > FORE_DIVE_MAX) && !(foreDiveSetpoint < FORE_DIVE_MIN)){
+			pwm.setPWM(FORE_DIVE_SERVO, 0, foreDiveSetpoint);	
+		}
+		if(!(headLightSetpoint > HEADLIGHT_MAX) && !(headLightSetpoint < HEADLIGHT_MIN)){
+			pwm.setPWM(HEADLIGHTS, 0, headLightSetpoint);	
+		}
+		
+		isUpdated = false;
+	}
+	
+	/*
+	Enter this in multiples of the thread refresh rate. Performs these actions:
+	1. updates encoder counts for spool/ballast/carriage
+	2. checks setpoints against current values
+	3. assigns appropriate pwm writes as necessary
+	4. Assigns appropriate direction sense as necessary
+	
+	Also toggles the electromagnet if a spool change from 0 occurs
+	*/
+	if(updateSpoolBallastCounter > SPOOL_BALLAST_UPDATE_COUNT){
+		
+		
+		
+		
+		updateSpoolBallastCounter = 0;
+	}
+	
+	/*
+	Enter this in multiples of the thread refresh rate. Peforms these actions:
+	1. Gets analogRead of rudder, aft Dive, fore Dive, motor temp, water sense,
+	battery voltage, 
+	
+	*/
 }
