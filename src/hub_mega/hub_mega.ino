@@ -57,6 +57,7 @@ Loop:
 /******************
 * PIN DEFINITIONS *
 ******************/
+//PWM Board
 const uint8_t AFT_DIVE_SERVO =	0;
 const uint8_t RUDDER_SERVO = 	1;
 const uint8_t CARRIAGE_SERVO = 	2;
@@ -66,6 +67,28 @@ const uint8_t STATUS_LED =		5;
 const uint8_t DRIVE_ESC = 		7;
 const uint8_t FORE_DIVE_SERVO =	14;
 const uint8_t BALLAST_ESC =		15;
+
+//Parallel Bus:
+const uint8_t CARRIAGE_MSB = 	53;
+const uint8_t CARRIAGE_LSB = 	50;
+const uint8_t SPOOL_MSB = 		51;
+const uint8_t SPOOL_LSB = 		48;
+const uint8_t BALLAST_MSB = 	49;
+const uint8_t BALLAST_LSB = 	46;
+//Direction Sense
+const uint8_t CARRIAGE_SENSE =	44;
+const uint8_t SPOOL_SENSE = 	45;
+const uint8_t BALLAST_SENSE = 	43;
+
+//Analog Input
+const uint8_t WATER_SENSE = 			5;
+const uint8_t MOTOR_TEMP_SENSE = 		0;
+const uint8_t RUDDER_FEEDBACK = 		4;
+const uint8_t AFT_DIVE_FEEDBACK = 		1;
+const uint8_t FORE_DIVE_FEEDBACK = 		12;
+const uint8_t BATTERY_VOLTAGE_SENSE = 	15;
+
+//Other
 const uint8_t EMAG = 			47;
 
 /******************
@@ -73,11 +96,12 @@ const uint8_t EMAG = 			47;
  *****************/
 const uint16_t BAUD_RATE = 					115200;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
+const uint8_t SENSORS_UPDATE_COUNT =		20;
+const uint16_t THREAD_FREQ = 				500;
 
 /*************
 * PWM LIMITS *
 *************/
-
 //Carriage. PWM below Center sends carriage towards aft. 
 const uint16_t CARRIAGE_MIN = 		330;
 const uint16_t CARRIAGE_CENTER =  	364;
@@ -121,6 +145,16 @@ const uint16_t BALLAST_MAX =		400;
 const uint16_t STATUS_MIN = 		0;
 const uint16_t STATUS_MAX = 		4095;
 
+/******************
+* FEEDBACK LIMITS *
+******************/
+const uint16_t WATER_SENSE_CENTER =				0;
+const uint16_t MOTOR_TEMP_SENSE_CENTER = 		0;
+const uint16_t RUDDER_FEEDBACK_CENTER = 		0;
+const uint16_t AFT_DIVE_FEEDBACK_CENTER = 		0;
+const uint16_t FORE_DIVE_FEEDBACK_CENTER = 		0;
+const uint16_t BATTERY_VOLTAGE_SENSE_CENTER = 	0;
+
 /***************************
 * SEND/RECEIVE PACKET DATA *
 ***************************/
@@ -161,6 +195,7 @@ byte currentSubData[SUB_PACKET_SIZE];
 bool isUpdated =					false;
 uint8_t updateSpoolBallastCounter = 0;
 uint8_t emagCounter = 				0;
+uint8_t updateSensorsCounter = 		0;
 
 //Setup Routine
 void setup() {
@@ -280,14 +315,34 @@ void loop() {
 		
 		
 		
-		
 		updateSpoolBallastCounter = 0;
 	}
 	
 	/*
 	Enter this in multiples of the thread refresh rate. Peforms these actions:
 	1. Gets analogRead of rudder, aft Dive, fore Dive, motor temp, water sense,
-	battery voltage, 
+	battery voltage.
+	2. Updates SubPacket 'Current' vars with data.
 	
 	*/
+	if(updateSensorsCounter > SENSORS_UPDATE_COUNT){
+		
+		//TODO: assign offsets properly
+		rudderPositionCurrent = analogRead(RUDDER_FEEDBACK) - RUDDER_FEEDBACK_CENTER;
+		aftDivePositionCurrent = analogRead(AFT_DIVE_FEEDBACK) - AFT_DIVE_FEEDBACK_CENTER;
+		foreDivePositionCurrent = analogRead(FORE_DIVE_FEEDBACK) - FORE_DIVE_FEEDBACK_CENTER;
+		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
+		waterSenseCurrent = analogRead(WATER_SENSE) - WATER_SENSE_CENTER;
+		batteryVoltage = analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER;
+		
+		updateSensorsCounter = 0;
+	}
+	
+	//update the counters:
+	updateSpoolBallastCounter++;
+	updateSensorsCounter++;
+	
+	//and the delay:
+	delayMicroseconds(THREAD_FREQ);
+	
 }
