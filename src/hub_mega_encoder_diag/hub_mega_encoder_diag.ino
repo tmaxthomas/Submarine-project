@@ -7,7 +7,6 @@ Submarine Arduino Mega Encoder Diag Code
 * INCLUDES *
 ***********/
 #include <Wire.h>
-#include "../common.h"
 #include <Adafruit_PWMServoDriver.h>
 
 /******************
@@ -50,7 +49,7 @@ const uint8_t EMAG = 			47;
 /******************
  * MACROS/DEFINES *
  *****************/
-const uint16_t BAUD_RATE = 					115200;
+const uint16_t BAUD_RATE = 					9600;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
 const uint8_t SENSORS_UPDATE_COUNT =		20;
 const uint16_t THREAD_FREQ = 				500;
@@ -153,13 +152,14 @@ uint8_t updateSpoolBallastCounter = 0;
 uint8_t emagCounter = 				0;
 uint8_t updateSensorsCounter = 		0;
 
-uint8_t spoolBusLastState = 		0;
-uint8_t ballastBusLastState = 		0;
-uint8_t carriageBusLastState = 		0;
+int8_t spoolBusLastState = 			0;
+int8_t ballastBusLastState = 		0;
+int8_t carriageBusLastState = 		0;
 
 //carriage position not sent over serial, so its here in globals
 uint16_t carriagePositionCurrent = 	0;
 
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 //diagnostics variables
 String serialData = "";
@@ -195,6 +195,7 @@ void setup() {
 	
 	//turn on status LED to indicate ready operation
 	pwm.setPWM(STATUS_LED, 0, STATUS_MAX);
+  pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
 }
 
 //Loop Routine
@@ -204,11 +205,11 @@ void loop() {
 		serialData = Serial.readString();
 		
 		if(serialData.equals("w")){
-			digitalWrite(BALLAST_SENSE, HIGH);
+			digitalWrite(BALLAST_SENSE, LOW);
 			pwm.setPWM(BALLAST_ESC, 0, 330);
 		}	
 		else if(serialData.equals("s")){
-			digitalWrite(BALLAST_SENSE, LOW);
+			digitalWrite(BALLAST_SENSE, HIGH);
 			pwm.setPWM(BALLAST_ESC, 0, 370);
 		}
 		else if(serialData.equals("stop")){
@@ -217,8 +218,8 @@ void loop() {
 	}
 	
 	ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
-	delay(10);
-	if(counter == 20){
+	delay(50);
+	if(counter == 4){
 		Serial.print("Current Ballast Counter: ");
 		Serial.println(ballastPositionCurrent);
 		counter = 0;
@@ -230,9 +231,9 @@ void loop() {
 updateEncoder() - takes the MSB and LSB pins and returns the amount by which 
 the encoded system has moved - an increment or decriment.
 */
-int8_t updateEncoder(uint8_t MSB, uint8_t LSB, uint8_t &lastState){
-	uint8_t currentState = 0;
-	uint8_t *previousState;
+int8_t updateEncoder(uint8_t MSB, uint8_t LSB, int8_t &lastState){
+	int8_t currentState = 0;
+	int8_t *previousState;
 	previousState = &lastState;
 	int8_t increment = 0;
 	if(digitalRead(MSB) && digitalRead(LSB)){
@@ -249,11 +250,21 @@ int8_t updateEncoder(uint8_t MSB, uint8_t LSB, uint8_t &lastState){
 	}
 	
 	if(currentState != *previousState){
-		increment = currentState - *previousState;
-		*previousState = currentState;
-		return increment;
+		if(currentState == 3 && *previousState == 0){
+			increment = -1;
+			*previousState = 3;
+		}
+		else if(currentState == 0 && *previousState == 3){
+			increment = 1;
+			*previousState = 0;
+		}
+		else{
+			increment = currentState - *previousState;
+			*previousState = currentState;
+		}
+		
 	}
-	return 0;
+	return increment;
 }
 
 uint16_t getPulse(){

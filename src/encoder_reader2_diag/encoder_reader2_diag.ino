@@ -16,12 +16,12 @@ Spool Sense (Purple):		D12
 Ballast Sense (Blue):		D2
 
 Parallel Bus
-Carriage LSB (Blue):	D4
-Carriage MSB (Purple):	D5
-Spool LSB (Orange):		D8
-Spool MSB (Yellow):		D7
-Ballast LSB (Green):	D3
-Ballast MSB (Grey):		D6
+Carriage LSB (Blue):	D5
+Carriage MSB (Purple):	D4
+Spool LSB (Orange):		D7
+Spool MSB (Yellow):		D8
+Ballast LSB (Green):	D6
+Ballast MSB (Grey):		D3
 
 */
 
@@ -60,7 +60,11 @@ bool carriageState =	true;
 bool spoolState =		true;
 bool ballastState = 	true;
 
+//debug
+uint8_t counter1 = 0;
+
 void setup() {
+	Serial.begin(9600);
 	
 	//Configure the GPIO as INPUT/OUTPUT
 	pinMode(carriageHall, INPUT);
@@ -88,6 +92,15 @@ void loop() {
 	updateBus(carriageHall, readPin(carriageHall, carriageSense));
 	updateBus(spoolHall, readPin(spoolHall, spoolSense));
 	updateBus(ballastHall, readPin(ballastHall, ballastSense));
+	
+	if(counter1 == 200){
+		Serial.print("MSB: ");
+		Serial.println(digitalRead(ballastMSB));
+    Serial.print("LSB: ");
+		Serial.println(digitalRead(ballastLSB));
+		counter1 = 0;
+	}
+	counter1++;
 	
 	delayMicroseconds(delayTime);
 }
@@ -231,6 +244,3 @@ void updateState(uint8_t pin){
 		ballastState = !ballastState;
 	}
 }
-
-
-
