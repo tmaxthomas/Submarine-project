@@ -34,12 +34,12 @@ uint8_t carriageSense =	9;
 uint8_t spoolSense =	12;
 uint8_t ballastSense =	2;
 
-uint8_t carriageLSB =	5;
-uint8_t carriageMSB =	4;
-uint8_t spoolLSB =		7;
-uint8_t spoolMSB =		8;
-uint8_t ballastLSB =	6;
-uint8_t ballastMSB =	3;
+uint8_t carriageLSB =	4;
+uint8_t carriageMSB =	5;
+uint8_t spoolLSB =		8;
+uint8_t spoolMSB =		7;
+uint8_t ballastLSB =	3;
+uint8_t ballastMSB =	6;
 
 //Debounce Counters
 uint8_t carriageDebounce =	0;
@@ -48,7 +48,7 @@ uint8_t ballastDebounce =	0;
 
 uint8_t debounceThreshhold = 3;
 
-uint16_t delayTime = 500;
+uint16_t delayTime = 200;
 
 //Parallel Bus Current data:
 int8_t carriageBus =	0;
@@ -121,41 +121,46 @@ int8_t readPin(uint8_t pin, uint8_t sensePin){
 	else if(pinRead && getDebounceCount(pin) < debounceThreshhold && !getState(pin)){
 		updateDebounceCount(pin, 1);
 	}
+	else{
+		updateDebounceCount(pin, -getDebounceCount(pin));
+	}
 	return increment; 
 }
 /*
 updates the parallel bus. Given Hall Pin and increment size.
 */
 void updateBus(uint8_t pin, int8_t increment){
-	if(pin == carriageHall){
-		carriageBus += increment;
-		if(carriageBus > 3){
-			carriageBus = 0;
+	if(increment != 0){
+		if(pin == carriageHall){
+			carriageBus += increment;
+			if(carriageBus > 3){
+				carriageBus = 0;
+			}
+			else if(carriageBus < 0){
+				carriageBus = 3;
+			}
+			writeToBus(carriageLSB, carriageMSB, carriageBus);
 		}
-		else if(carriageBus < 0){
-			carriageBus = 3;
+		else if(pin == spoolHall){
+			spoolBus += increment;
+			if(spoolBus > 3){
+				spoolBus = 0;
+			}
+			else if(spoolBus < 0){
+				spoolBus = 3;
+			}
+			writeToBus(spoolLSB, spoolMSB, spoolBus);
 		}
-		writeToBus(carriageLSB, carriageMSB, carriageBus);
-	}
-	else if(pin == spoolHall){
-		spoolBus += increment;
-		if(spoolBus > 3){
-			spoolBus = 0;
+		else if(pin == ballastHall){
+			ballastBus += increment;
+			if(ballastBus > 3){
+				ballastBus = 0;
+			}
+			else if(ballastBus < 0){
+				ballastBus = 3;
+			}
+			writeToBus(ballastLSB, ballastMSB, ballastBus);
 		}
-		else if(spoolBus < 0){
-			spoolBus = 3;
-		}
-		writeToBus(spoolLSB, spoolMSB, spoolBus);
-	}
-	else if(pin == ballastHall){
-		ballastBus += increment;
-		if(ballastBus > 3){
-			ballastBus = 0;
-		}
-		else if(ballastBus < 0){
-			ballastBus = 3;
-		}
-		writeToBus(ballastLSB, ballastMSB, ballastBus);
 	}
 }
 void writeToBus(uint8_t LSBPin, uint8_t MSBPin, int8_t busVal){
