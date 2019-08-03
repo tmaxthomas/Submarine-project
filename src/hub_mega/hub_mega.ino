@@ -197,10 +197,17 @@ uint8_t updateSpoolBallastCounter = 0;
 uint8_t emagCounter = 				0;
 uint8_t updateSensorsCounter = 		0;
 
+uint8_t spoolBusLastState = 		0;
+uint8_t ballastBusLastState = 		0;
+uint8_t carriageBusLastState = 		0;
+
+//carriage position not sent over serial, so its here in globals
+uint16_t carriagePositionCurrent = 	0;
+
 //Setup Routine
 void setup() {
-    Serial.begin(BAUD_RATE);     //USB
-    Serial1.begin(BAUD_RATE);    //Radio/mini-sub
+    //Radio/mini-sub Serial Initiation
+	Serial1.begin(BAUD_RATE);    
 	
 	//Initialize the PWM Driver Board
 	pwm.begin();
@@ -208,9 +215,22 @@ void setup() {
 	
 	delay(200);
 	
+	//pinmode setup for DIO pins
+	pinMode(CARRIAGE_SENSE, OUTPUT);
+	pinMode(SPOOL_SENSE, OUTPUT);
+	pinMode(BALLAST_SENSE, OUTPUT);
+	
+	pinMode(EMAG, OUTPUT);
+	
+	pinMode(CARRIAGE_MSB, INPUT);
+	pinMode(CARRIAGE_LSB, INPUT);
+	pinMode(SPOOL_MSB, INPUT);
+	pinMode(SPOOL_LSB, INPUT);
+	pinMode(BALLAST_MSB, INPUT);
+	pinMode(BALLAST_LSB, INPUT);
+	
 	//turn on status LED to indicate ready operation
 	pwm.setPWM(STATUS_LED, 0, STATUS_MAX);
-
 }
 
 //Loop Routine
@@ -313,6 +333,9 @@ void loop() {
 	*/
 	if(updateSpoolBallastCounter > SPOOL_BALLAST_UPDATE_COUNT){
 		
+		spoolPositionCurrent += updateEncoder(SPOOL_MSB, SPOOL_LSB, &spoolBusLastState);
+		ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, &ballastBusLastState);
+		carriagePositionCurrent += updateEncoder(CARRIAGE_MSB, CARRIAGE_LSB, &carriageBusLastState);
 		
 		
 		updateSpoolBallastCounter = 0;
@@ -345,4 +368,33 @@ void loop() {
 	//and the delay:
 	delayMicroseconds(THREAD_FREQ);
 	
+}
+/*
+updateEncoder() - takes the MSB and LSB pins and returns the amount by which 
+the encoded system has moved - an increment or decriment.
+*/
+int8_t updateEncoder(uint8_t MSB, uint8_t LSB, uint8_t &lastState){
+	uint8_t currentState = 0;
+	uint8_t *previousState;
+	previousState = &lastState;
+	int8_t increment = 0;
+	if(digitalRead(MSB) && digitalRead(LSB)){
+		currentState = 3;
+	}
+	else if(digitalRead(MSB) && !digitalRead(LSB)){
+		currentState = 2;
+	}
+	else if(!digitalRead(MSB) && digitalRead(LSB)){
+		currentState = 1;
+	}
+	else if(!digitalRead(MSB) && !digitalRead(LSB)){
+		currentState = 0;
+	}
+	
+	if(currentState != *previousState){
+		increment = currentState - *previousState;
+		*previousState = currentState;
+		return increment;
+	}
+	return 0;
 }
