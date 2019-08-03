@@ -75,7 +75,8 @@ const uint8_t SPOOL_MSB = 		51;
 const uint8_t SPOOL_LSB = 		48;
 const uint8_t BALLAST_MSB = 	49;
 const uint8_t BALLAST_LSB = 	46;
-//Direction Sense
+
+//Direction Sense. digitalWrite of HIGH on these directs an upward count on the encoder nano
 const uint8_t CARRIAGE_SENSE =	44;
 const uint8_t SPOOL_SENSE = 	45;
 const uint8_t BALLAST_SENSE = 	43;
@@ -94,9 +95,10 @@ const uint8_t EMAG = 			47;
 /******************
  * MACROS/DEFINES *
  *****************/
-const uint16_t BAUD_RATE = 					115200;
+const uint16_t BAUD_RATE = 					9600;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
 const uint8_t SENSORS_UPDATE_COUNT =		20;
+const uint8_t CONTROL_UPDATE_COUNT = 		5;
 const uint16_t THREAD_FREQ = 				500;
 
 /*************
@@ -131,7 +133,7 @@ const uint16_t FORE_DIVE_MAX =		460;
 const uint16_t HEADLIGHT_MIN =		0;
 const uint16_t HEADLIGHT_MAX =		4095;
 
-//Drive Motor ESC. TODO: check directions
+//Drive Motor ESC. Min is forward, max is reverse
 const uint16_t DRIVE_MIN =			280;
 const uint16_t DRIVE_CENTER =		350;
 const uint16_t DRIVE_MAX =			420;
@@ -189,6 +191,17 @@ uint8_t batteryVoltage = 			0;
 const uint8_t SUB_PACKET_SIZE = 	10;
 byte currentSubData[SUB_PACKET_SIZE];
 
+/**************************
+* Spooling Lookup Indices *
+***************************/
+const uint16_t SPOOL_FIRST_INTERVAL = 	52;
+const uint16_t SPOOL_SECOND_INTERVAL = 	104;
+const uint16_t SPOOL_THIRD_INTERVAL = 	156;
+const uint16_t SPOOL_FOURTH_INTERVAL = 	208;
+const uint16_t SPOOL_FIFTH_INTERVAL =	260;
+
+const uint16_t CARRIAGE_SOFT_LIMIT = 	300;
+ 
 /**********
 * GLOBALS *
 **********/
@@ -196,13 +209,16 @@ bool isUpdated =					false;
 uint8_t updateSpoolBallastCounter = 0;
 uint8_t emagCounter = 				0;
 uint8_t updateSensorsCounter = 		0;
+uint8_t updateControlCounter = 		0;
 
-uint8_t spoolBusLastState = 		0;
-uint8_t ballastBusLastState = 		0;
-uint8_t carriageBusLastState = 		0;
+int8_t spoolBusLastState = 			0;
+int8_t ballastBusLastState = 		0;
+int8_t carriageBusLastState = 		0;
 
 //carriage position not sent over serial, so its here in globals
 uint16_t carriagePositionCurrent = 	0;
+
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 //Setup Routine
 void setup() {
@@ -325,20 +341,49 @@ void loop() {
 	/*
 	Enter this in multiples of the thread refresh rate. Performs these actions:
 	1. updates encoder counts for spool/ballast/carriage
-	2. checks setpoints against current values
-	3. assigns appropriate pwm writes as necessary
-	4. Assigns appropriate direction sense as necessary
-	
-	Also toggles the electromagnet if a spool change from 0 occurs
 	*/
 	if(updateSpoolBallastCounter > SPOOL_BALLAST_UPDATE_COUNT){
 		
-		spoolPositionCurrent += updateEncoder(SPOOL_MSB, SPOOL_LSB, &spoolBusLastState);
-		ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, &ballastBusLastState);
-		carriagePositionCurrent += updateEncoder(CARRIAGE_MSB, CARRIAGE_LSB, &carriageBusLastState);
-		
+		spoolPositionCurrent += updateEncoder(SPOOL_MSB, SPOOL_LSB, spoolBusLastState);
+		ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
+		carriagePositionCurrent += updateEncoder(CARRIAGE_MSB, CARRIAGE_LSB, carriageBusLastState);
 		
 		updateSpoolBallastCounter = 0;
+	}
+	
+	/*
+	Enter this in multiples of the thread refresh rate. Performs these actions:
+	1. Updates the ballast position with new setpoint data.
+	
+	*/
+	if(updateControlCounter > CONTROL_UPDATE_COUNT){
+		//Ballast control algorithm. setpoint increases as water is drawn in:
+		if(ballastSetpoint == ballastPositionCurrent){
+			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
+		}
+		else if(ballastSetpoint < ballastPositionCurrent){
+			pwm.setPWM(BALLAST_ESC, 0, 325);
+		}
+		else if(ballastSetpoint > ballastPositionCurrent){
+			pwm.setPWM(BALLAST_ESC, 0, 375);
+		}
+		
+		//Now the spool. Setpoint increases as tether is unspooled:
+		if(spoolSetpoint == spoolPositionCurrent){
+			pwm.setPWM(SPOOL_SERVO, 0, SPOOL_CENTER);
+			pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_CENTER);
+		}
+		//Spooling out
+		else if(spoolSetpoint > spoolPositionCurrent){
+			pwm.setPWM(SPOOL_SERVO, 0, 355);
+			setCarriage(1);
+		}
+		//spooling in
+		else if(spoolSetpoint < spoolPositionCurrent){
+			pwm.setPWM(SPOOL_SERVO, 0, 390);
+			setCarriage(-1);
+		}
+		updateControlCounter = 0;
 	}
 	
 	/*
@@ -346,7 +391,6 @@ void loop() {
 	1. Gets analogRead of rudder, aft Dive, fore Dive, motor temp, water sense,
 	battery voltage.
 	2. Updates SubPacket 'Current' vars with data.
-	
 	*/
 	if(updateSensorsCounter > SENSORS_UPDATE_COUNT){
 		
@@ -364,6 +408,7 @@ void loop() {
 	//update the counters:
 	updateSpoolBallastCounter++;
 	updateSensorsCounter++;
+	updateControlCounter++;
 	
 	//and the delay:
 	delayMicroseconds(THREAD_FREQ);
@@ -373,9 +418,9 @@ void loop() {
 updateEncoder() - takes the MSB and LSB pins and returns the amount by which 
 the encoded system has moved - an increment or decriment.
 */
-int8_t updateEncoder(uint8_t MSB, uint8_t LSB, uint8_t &lastState){
-	uint8_t currentState = 0;
-	uint8_t *previousState;
+int8_t updateEncoder(uint8_t MSB, uint8_t LSB, int8_t &lastState){
+	int8_t currentState = 0;
+	int8_t *previousState;
 	previousState = &lastState;
 	int8_t increment = 0;
 	if(digitalRead(MSB) && digitalRead(LSB)){
@@ -392,9 +437,50 @@ int8_t updateEncoder(uint8_t MSB, uint8_t LSB, uint8_t &lastState){
 	}
 	
 	if(currentState != *previousState){
-		increment = currentState - *previousState;
-		*previousState = currentState;
-		return increment;
+		if(currentState == 3 && *previousState == 0){
+			increment = -1;
+			*previousState = 3;
+		}
+		else if(currentState == 0 && *previousState == 3){
+			increment = 1;
+			*previousState = 0;
+		}
+		else{
+			increment = currentState - *previousState;
+			*previousState = currentState;
+		}
+		
 	}
-	return 0;
+	return increment;
+}
+
+void setCarriage(int8_t spoolingState){
+	//spoolingState is -1 when spooling in, 1 when spooling out
+	if(spoolPositionCurrent < SPOOL_FIRST_INTERVAL){
+		carriagePWMSet(spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_FIRST_INTERVAL && spoolPositionCurrent < SPOOL_SECOND_INTERVAL){
+		carriagePWMSet(-1 * spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_SECOND_INTERVAL && spoolPositionCurrent < SPOOL_THIRD_INTERVAL){
+		carriagePWMSet(spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_THIRD_INTERVAL && spoolPositionCurrent < SPOOL_FOURTH_INTERVAL){
+		carriagePWMSet(-1 * spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_FOURTH_INTERVAL && spoolPositionCurrent < SPOOL_FIFTH_INTERVAL){
+		carriagePWMSet(spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_FIFTH_INTERVAL){
+		carriagePWMSet(-1 * spoolingState);
+	}
+}
+void carriagePWMSet(int8_t spoolingState){
+	
+	if(spoolingState == -1 && carriagePositionCurrent <= 0){
+		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MIN);
+	}
+	else if(spoolingState == 1 && carriagePositionCurrent >= CARRIAGE_SOFT_LIMIT){
+		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MAX);
+	}	
 }

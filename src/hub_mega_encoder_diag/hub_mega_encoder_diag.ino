@@ -1,5 +1,49 @@
 /*
-Submarine Arduino Mega Encoder Diag Code
+Submarine Arduino Mega Hub Code
+
+Handles the transmission and reception of Serial data packets.
+Writes all PWM data to the PWM Driver Board.
+Reads the encoder bus.
+Reads all analog sensors:
+	-Water sensors
+	-Temperature sensors
+	-Potentiometer Feedback Sensors
+Runs the control algorithm for interpreting and repositioning mechanical systems
+
+*/
+
+/*
+Program Flow:
+
+Declare variables, include libraries, define constants
+
+Setup:
+	-initialize Serial and Serial1
+	-initialize PWM driver board
+	-set pinmodes, where necessary
+	
+Loop:
+	-Start by checking the serial bus for new packet. If present, update local setpoints with new packet data
+	-begin read operations:
+		-Read encoder bus, increment or decriment as necessary
+		-Read Potentiometers
+		-Read Temperature Sensors
+		-Read water sensor
+		
+	-begin write operations
+		-send servo writes, if new setpoints have been assigned
+		-Send new headlight value, if assigned
+		-Send ballast ESC write with PI control
+		-Send Spool/Carriage writes:
+			-Start by checking if setpoint != current spool encoder count
+			-If it is different, then write appropriate direction to spool servo (don't move otherwise)
+				-check current spool encoder count against carriage encoder count (with scaling factor for spool counts:carriage counts per rev of spool)
+					(use iterating factor - number of times the carriage has made a full travel)
+					Determine where the carriage needs to be (from spool count) vs where it is. The spool count acts as the carriage setpoint
+						Assign appropriate write, if necessary 
+	
+	-assemble new transmit data packet
+		-write new data packet to Serial bus
 
 */
 
@@ -7,6 +51,7 @@ Submarine Arduino Mega Encoder Diag Code
 * INCLUDES *
 ***********/
 #include <Wire.h>
+#include "../common.h"
 #include <Adafruit_PWMServoDriver.h>
 
 /******************
@@ -30,7 +75,8 @@ const uint8_t SPOOL_MSB = 		51;
 const uint8_t SPOOL_LSB = 		48;
 const uint8_t BALLAST_MSB = 	49;
 const uint8_t BALLAST_LSB = 	46;
-//Direction Sense
+
+//Direction Sense. digitalWrite of HIGH on these directs an upward count on the encoder nano
 const uint8_t CARRIAGE_SENSE =	44;
 const uint8_t SPOOL_SENSE = 	45;
 const uint8_t BALLAST_SENSE = 	43;
@@ -52,6 +98,7 @@ const uint8_t EMAG = 			47;
 const uint16_t BAUD_RATE = 					9600;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
 const uint8_t SENSORS_UPDATE_COUNT =		20;
+const uint8_t CONTROL_UPDATE_COUNT = 		5;
 const uint16_t THREAD_FREQ = 				500;
 
 /*************
@@ -86,7 +133,7 @@ const uint16_t FORE_DIVE_MAX =		460;
 const uint16_t HEADLIGHT_MIN =		0;
 const uint16_t HEADLIGHT_MAX =		4095;
 
-//Drive Motor ESC. TODO: check directions
+//Drive Motor ESC. Min is forward, max is reverse
 const uint16_t DRIVE_MIN =			280;
 const uint16_t DRIVE_CENTER =		350;
 const uint16_t DRIVE_MAX =			420;
@@ -144,6 +191,17 @@ uint8_t batteryVoltage = 			0;
 const uint8_t SUB_PACKET_SIZE = 	10;
 byte currentSubData[SUB_PACKET_SIZE];
 
+/**************************
+* Spooling Lookup Indices *
+***************************/
+const uint16_t SPOOL_FIRST_INTERVAL = 	52;
+const uint16_t SPOOL_SECOND_INTERVAL = 	104;
+const uint16_t SPOOL_THIRD_INTERVAL = 	156;
+const uint16_t SPOOL_FOURTH_INTERVAL = 	208;
+const uint16_t SPOOL_FIFTH_INTERVAL =	260;
+
+const uint16_t CARRIAGE_SOFT_LIMIT = 	300;
+ 
 /**********
 * GLOBALS *
 **********/
@@ -151,6 +209,7 @@ bool isUpdated =					false;
 uint8_t updateSpoolBallastCounter = 0;
 uint8_t emagCounter = 				0;
 uint8_t updateSensorsCounter = 		0;
+uint8_t updateControlCounter = 		0;
 
 int8_t spoolBusLastState = 			0;
 int8_t ballastBusLastState = 		0;
@@ -159,18 +218,15 @@ int8_t carriageBusLastState = 		0;
 //carriage position not sent over serial, so its here in globals
 uint16_t carriagePositionCurrent = 	0;
 
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-
-//diagnostics variables
+//diag
+uint16_t diagCounter = 0;
 String serialData = "";
-bool isLoop = true;
-uint16_t pulse = 0;
-uint8_t counter = 0;
 
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 //Setup Routine
 void setup() {
-    //Enable Diag Serial
+    //Radio/mini-sub Serial Initiation
 	Serial.begin(BAUD_RATE);    
 	
 	//Initialize the PWM Driver Board
@@ -195,7 +251,6 @@ void setup() {
 	
 	//turn on status LED to indicate ready operation
 	pwm.setPWM(STATUS_LED, 0, STATUS_MAX);
-  pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
 }
 
 //Loop Routine
@@ -203,28 +258,91 @@ void loop() {
 	
 	if(Serial.available() > 0){
 		serialData = Serial.readString();
-		
-		if(serialData.equals("w")){
-			digitalWrite(BALLAST_SENSE, LOW);
-			pwm.setPWM(BALLAST_ESC, 0, 330);
-		}	
-		else if(serialData.equals("s")){
-			digitalWrite(BALLAST_SENSE, HIGH);
-			pwm.setPWM(BALLAST_ESC, 0, 370);
-		}
-		else if(serialData.equals("stop")){
-			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
-		}
+		spoolSetpoint = serialData.toInt();
 	}
 	
-	ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
-	delay(50);
-	if(counter == 4){
-		Serial.print("Current Ballast Counter: ");
-		Serial.println(ballastPositionCurrent);
-		counter = 0;
+	if(diagCounter == 1000){
+		Serial.print("SpoolCounter: ");
+		Serial.println(spoolPositionCurrent);
+		Serial.print("CarriageCounter: ");
+		Serial.println(carriagePositionCurrent);
+		diagCounter = 0;
 	}
-	counter++;
+	diagCounter++;
+	/*
+	Enter this in multiples of the thread refresh rate. Performs these actions:
+	1. updates encoder counts for spool/ballast/carriage
+	*/
+	if(updateSpoolBallastCounter > SPOOL_BALLAST_UPDATE_COUNT){
+		
+		spoolPositionCurrent += updateEncoder(SPOOL_MSB, SPOOL_LSB, spoolBusLastState);
+		ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
+		carriagePositionCurrent += updateEncoder(CARRIAGE_MSB, CARRIAGE_LSB, carriageBusLastState);
+		
+		updateSpoolBallastCounter = 0;
+	}
+	
+	/*
+	Enter this in multiples of the thread refresh rate. Performs these actions:
+	1. Updates the ballast position with new setpoint data.
+	
+	*/
+	if(updateControlCounter > CONTROL_UPDATE_COUNT){
+		//Ballast control algorithm. setpoint increases as water is drawn in:
+		if(ballastSetpoint == ballastPositionCurrent){
+			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
+		}
+		else if(ballastSetpoint < ballastPositionCurrent){
+			pwm.setPWM(BALLAST_ESC, 0, 325);
+		}
+		else if(ballastSetpoint > ballastPositionCurrent){
+			pwm.setPWM(BALLAST_ESC, 0, 375);
+		}
+		
+		//Now the spool. Setpoint increases as tether is unspooled:
+		if(spoolSetpoint == spoolPositionCurrent){
+			pwm.setPWM(SPOOL_SERVO, 0, SPOOL_CENTER);
+			pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_CENTER);
+		}
+		//Spooling out
+		else if(spoolSetpoint > spoolPositionCurrent){
+			pwm.setPWM(SPOOL_SERVO, 0, 355);
+			setCarriage(1);
+		}
+		//spooling in
+		else if(spoolSetpoint < spoolPositionCurrent){
+			pwm.setPWM(SPOOL_SERVO, 0, 390);
+			setCarriage(-1);
+		}
+		updateControlCounter = 0;
+	}
+	
+	/*
+	Enter this in multiples of the thread refresh rate. Peforms these actions:
+	1. Gets analogRead of rudder, aft Dive, fore Dive, motor temp, water sense,
+	battery voltage.
+	2. Updates SubPacket 'Current' vars with data.
+	*/
+	if(updateSensorsCounter > SENSORS_UPDATE_COUNT){
+		
+		//TODO: assign offsets properly
+		rudderPositionCurrent = analogRead(RUDDER_FEEDBACK) - RUDDER_FEEDBACK_CENTER;
+		aftDivePositionCurrent = analogRead(AFT_DIVE_FEEDBACK) - AFT_DIVE_FEEDBACK_CENTER;
+		foreDivePositionCurrent = analogRead(FORE_DIVE_FEEDBACK) - FORE_DIVE_FEEDBACK_CENTER;
+		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
+		waterSenseCurrent = analogRead(WATER_SENSE) - WATER_SENSE_CENTER;
+		batteryVoltage = analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER;
+		
+		updateSensorsCounter = 0;
+	}
+	
+	//update the counters:
+	updateSpoolBallastCounter++;
+	updateSensorsCounter++;
+	updateControlCounter++;
+	
+	//and the delay:
+	delayMicroseconds(THREAD_FREQ);
 	
 }
 /*
@@ -267,11 +385,33 @@ int8_t updateEncoder(uint8_t MSB, uint8_t LSB, int8_t &lastState){
 	return increment;
 }
 
-uint16_t getPulse(){
-	uint16_t data = 0;
-	while(Serial.available() == 0);
-	delay(10);
-	serialData = Serial.readString();
-	data = serialData.toInt();
-	return data;
+void setCarriage(int8_t spoolingState){
+	//spoolingState is -1 when spooling in, 1 when spooling out
+	if(spoolPositionCurrent < SPOOL_FIRST_INTERVAL){
+		carriagePWMSet(spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_FIRST_INTERVAL && spoolPositionCurrent < SPOOL_SECOND_INTERVAL){
+		carriagePWMSet(-1 * spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_SECOND_INTERVAL && spoolPositionCurrent < SPOOL_THIRD_INTERVAL){
+		carriagePWMSet(spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_THIRD_INTERVAL && spoolPositionCurrent < SPOOL_FOURTH_INTERVAL){
+		carriagePWMSet(-1 * spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_FOURTH_INTERVAL && spoolPositionCurrent < SPOOL_FIFTH_INTERVAL){
+		carriagePWMSet(spoolingState);
+	}
+	else if(spoolPositionCurrent > SPOOL_FIFTH_INTERVAL){
+		carriagePWMSet(-1 * spoolingState);
+	}
+}
+void carriagePWMSet(int8_t spoolingState){
+	
+	if(spoolingState == -1 && carriagePositionCurrent <= 0){
+		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MIN);
+	}
+	else if(spoolingState == 1 && carriagePositionCurrent >= CARRIAGE_SOFT_LIMIT){
+		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MAX);
+	}	
 }
