@@ -1,0 +1,2 @@
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickInterface\obj\Debug\JoystickInterface.csprojAssemblyReference.cache
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickInterface\obj\Debug\JoystickInterface.csproj.CoreCompileInputs.cache
