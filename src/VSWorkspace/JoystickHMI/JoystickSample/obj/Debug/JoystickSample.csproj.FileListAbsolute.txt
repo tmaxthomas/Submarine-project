@@ -1,0 +1,7 @@
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.csprojAssemblyReference.cache
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.Axis.resources
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.Button.resources
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.frmMain.resources
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.Properties.Resources.resources
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.csproj.GenerateResource.cache
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickHMI\JoystickSample\obj\Debug\JoystickSample.csproj.CoreCompileInputs.cache

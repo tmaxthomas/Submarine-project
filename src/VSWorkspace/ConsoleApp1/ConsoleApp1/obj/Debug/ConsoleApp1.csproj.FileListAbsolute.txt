@@ -1,0 +1,13 @@
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\ConsoleApp1.exe.config
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\ConsoleApp1.exe
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\ConsoleApp1.pdb
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\SharpDX.DirectInput.dll
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\SharpDX.dll
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\SharpDX.pdb
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\SharpDX.DirectInput.pdb
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\bin\Debug\SharpDX.DirectInput.xml
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.csprojAssemblyReference.cache
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.CoreCompileInputs.cache
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.CopyComplete
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.exe
+D:\Projects\Submarine-project\src\VSWorkspace\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.pdb
