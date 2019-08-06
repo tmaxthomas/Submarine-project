@@ -18,7 +18,7 @@ namespace ConsoleApp1
             // Find a Joystick Guid
             var joystickGuid = Guid.Empty;
 
-            foreach (var deviceInstance in directInput.GetDevices(DeviceType.Gamepad,
+            foreach (var deviceInstance in directInput.GetDevices(DeviceType.FirstPerson,
                         DeviceEnumerationFlags.AllDevices))
                 joystickGuid = deviceInstance.InstanceGuid;
 
