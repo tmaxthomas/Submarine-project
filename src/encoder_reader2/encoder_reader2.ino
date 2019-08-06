@@ -61,7 +61,7 @@ bool spoolState =		true;
 bool ballastState = 	true;
 
 void setup() {
-	
+	delay(500);
 	//Configure the GPIO as INPUT/OUTPUT
 	pinMode(carriageHall, INPUT);
 	pinMode(spoolHall, INPUT);

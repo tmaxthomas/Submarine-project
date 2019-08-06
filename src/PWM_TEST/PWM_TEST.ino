@@ -25,11 +25,6 @@ void setup() {
 
   delay(10);
   
-  Serial.println("Arming ESC(s)...");
-  //ARM ESC HERE:
- // pwm.setPWM(servonum, 0, armPulse);
-  delay(4000);
-  Serial.println("ESC(s) Armed, Program ready!");
 }
 
 void loop() {

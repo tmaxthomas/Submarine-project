@@ -22,7 +22,7 @@ void setup() {
   delay(500);
   
   pwm.setPWM(3, 0, 374);
-  pwm.setPWM(2, 0, 363);
+  pwm.setPWM(2, 0, 364);
   
   Serial.println("READY");
   
@@ -33,15 +33,15 @@ void loop() {
 		serialData = Serial.readString();
 		
 		if(serialData.equals("w")){
-			pwm.setPWM(3, 0, 390);
+			pwm.setPWM(3, 0, 387);
 			pwm.setPWM(2, 0, pulse);
 		}
 		else if(serialData.equals("s")){
 			pwm.setPWM(3, 0, 374);
-			pwm.setPWM(2, 0, 363);
+			pwm.setPWM(2, 0, 364);
 		}
 		else if(serialData.equals("r")){
-			pwm.setPWM(3, 0, 355);
+			pwm.setPWM(3, 0, 358);
 			if(state == 0){
 				pulse = 396;
 				pwm.setPWM(2, 0, pulse);

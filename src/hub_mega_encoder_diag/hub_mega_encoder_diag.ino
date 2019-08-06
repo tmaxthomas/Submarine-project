@@ -51,7 +51,6 @@ Loop:
 * INCLUDES *
 ***********/
 #include <Wire.h>
-#include "../common.h"
 #include <Adafruit_PWMServoDriver.h>
 
 /******************
@@ -96,9 +95,9 @@ const uint8_t EMAG = 			47;
  * MACROS/DEFINES *
  *****************/
 const uint16_t BAUD_RATE = 					9600;
-const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
+const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  10;
 const uint8_t SENSORS_UPDATE_COUNT =		20;
-const uint8_t CONTROL_UPDATE_COUNT = 		5;
+const uint8_t CONTROL_UPDATE_COUNT = 		3;
 const uint16_t THREAD_FREQ = 				500;
 
 /*************
@@ -166,7 +165,7 @@ uint16_t rudderSetpoint = 			400;
 uint16_t aftDiveSetpoint = 			320;
 uint16_t foreDiveSetpoint = 		390;
 uint16_t headLightSetpoint = 		0;
-uint16_t spoolSetpoint = 			0;
+int16_t spoolSetpoint = 			0;
 uint16_t ballastSetpoint = 			0;
 
 //temp values used for unit conversion in setpoint assignment
@@ -182,7 +181,7 @@ byte currentStationData[STATION_PACKET_SIZE];
 int8_t rudderPositionCurrent = 		0;
 int8_t aftDivePositionCurrent = 	0;
 int8_t foreDivePositionCurrent = 	0;
-uint16_t spoolPositionCurrent = 	0;
+int16_t spoolPositionCurrent = 		0;
 uint16_t ballastPositionCurrent = 	0;
 uint8_t motorTempCurrent = 			0;
 uint8_t waterSenseCurrent = 		0;
@@ -194,13 +193,13 @@ byte currentSubData[SUB_PACKET_SIZE];
 /**************************
 * Spooling Lookup Indices *
 ***************************/
-const uint16_t SPOOL_FIRST_INTERVAL = 	52;
-const uint16_t SPOOL_SECOND_INTERVAL = 	104;
-const uint16_t SPOOL_THIRD_INTERVAL = 	156;
-const uint16_t SPOOL_FOURTH_INTERVAL = 	208;
-const uint16_t SPOOL_FIFTH_INTERVAL =	260;
+const uint16_t SPOOL_FIRST_INTERVAL = 	106;
+const uint16_t SPOOL_SECOND_INTERVAL = 	212;
+const uint16_t SPOOL_THIRD_INTERVAL = 	318;
+const uint16_t SPOOL_FOURTH_INTERVAL = 	424;
+const uint16_t SPOOL_FIFTH_INTERVAL =	530;
 
-const uint16_t CARRIAGE_SOFT_LIMIT = 	300;
+const uint16_t CARRIAGE_SOFT_LIMIT = 	155;
  
 /**********
 * GLOBALS *
@@ -216,7 +215,7 @@ int8_t ballastBusLastState = 		0;
 int8_t carriageBusLastState = 		0;
 
 //carriage position not sent over serial, so its here in globals
-uint16_t carriagePositionCurrent = 	0;
+int16_t carriagePositionCurrent = 	0;
 
 //diag
 uint16_t diagCounter = 0;
@@ -226,7 +225,12 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 //Setup Routine
 void setup() {
-    //Radio/mini-sub Serial Initiation
+	//first make sure the encoder counts a positive increase. 
+    digitalWrite(CARRIAGE_SENSE, HIGH);
+	digitalWrite(BALLAST_SENSE, HIGH);
+	digitalWrite(SPOOL_SENSE, HIGH);
+	
+	//Radio/mini-sub Serial Initiation
 	Serial.begin(BAUD_RATE);    
 	
 	//Initialize the PWM Driver Board
@@ -306,12 +310,14 @@ void loop() {
 		}
 		//Spooling out
 		else if(spoolSetpoint > spoolPositionCurrent){
-			pwm.setPWM(SPOOL_SERVO, 0, 355);
+			digitalWrite(SPOOL_SENSE, HIGH);
+			pwm.setPWM(SPOOL_SERVO, 0, 357);
 			setCarriage(1);
 		}
 		//spooling in
 		else if(spoolSetpoint < spoolPositionCurrent){
-			pwm.setPWM(SPOOL_SERVO, 0, 390);
+			digitalWrite(SPOOL_SENSE, LOW);
+			pwm.setPWM(SPOOL_SERVO, 0, 389);
 			setCarriage(-1);
 		}
 		updateControlCounter = 0;
@@ -390,28 +396,30 @@ void setCarriage(int8_t spoolingState){
 	if(spoolPositionCurrent < SPOOL_FIRST_INTERVAL){
 		carriagePWMSet(spoolingState);
 	}
-	else if(spoolPositionCurrent > SPOOL_FIRST_INTERVAL && spoolPositionCurrent < SPOOL_SECOND_INTERVAL){
+	else if(spoolPositionCurrent >= SPOOL_FIRST_INTERVAL && spoolPositionCurrent < SPOOL_SECOND_INTERVAL){
 		carriagePWMSet(-1 * spoolingState);
 	}
-	else if(spoolPositionCurrent > SPOOL_SECOND_INTERVAL && spoolPositionCurrent < SPOOL_THIRD_INTERVAL){
+	else if(spoolPositionCurrent >= SPOOL_SECOND_INTERVAL && spoolPositionCurrent < SPOOL_THIRD_INTERVAL){
 		carriagePWMSet(spoolingState);
 	}
-	else if(spoolPositionCurrent > SPOOL_THIRD_INTERVAL && spoolPositionCurrent < SPOOL_FOURTH_INTERVAL){
+	else if(spoolPositionCurrent >= SPOOL_THIRD_INTERVAL && spoolPositionCurrent < SPOOL_FOURTH_INTERVAL){
 		carriagePWMSet(-1 * spoolingState);
 	}
-	else if(spoolPositionCurrent > SPOOL_FOURTH_INTERVAL && spoolPositionCurrent < SPOOL_FIFTH_INTERVAL){
+	else if(spoolPositionCurrent >= SPOOL_FOURTH_INTERVAL && spoolPositionCurrent < SPOOL_FIFTH_INTERVAL){
 		carriagePWMSet(spoolingState);
 	}
-	else if(spoolPositionCurrent > SPOOL_FIFTH_INTERVAL){
+	else if(spoolPositionCurrent >= SPOOL_FIFTH_INTERVAL){
 		carriagePWMSet(-1 * spoolingState);
 	}
 }
 void carriagePWMSet(int8_t spoolingState){
 	
-	if(spoolingState == -1 && carriagePositionCurrent <= 0){
+	if(spoolingState == -1 && carriagePositionCurrent >= 0){
 		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MIN);
+		digitalWrite(CARRIAGE_SENSE, LOW);
 	}
-	else if(spoolingState == 1 && carriagePositionCurrent >= CARRIAGE_SOFT_LIMIT){
+	else if(spoolingState == 1 && carriagePositionCurrent <= CARRIAGE_SOFT_LIMIT){
 		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MAX);
+		digitalWrite(CARRIAGE_SENSE, HIGH);
 	}	
 }
