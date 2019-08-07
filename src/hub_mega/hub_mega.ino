@@ -51,7 +51,6 @@ Loop:
 * INCLUDES *
 ***********/
 #include <Wire.h>
-#include "../common.h"
 #include <Adafruit_PWMServoDriver.h>
 
 /******************
@@ -228,7 +227,7 @@ void setup() {
 	digitalWrite(SPOOL_SENSE, HIGH);
 	
     //Radio/mini-sub Serial Initiation
-	Serial1.begin(BAUD_RATE);    
+	Serial.begin(BAUD_RATE);    
 	
 	//Initialize the PWM Driver Board
 	pwm.begin();
@@ -257,9 +256,7 @@ void setup() {
 //Loop Routine
 void loop() {
 	//enter if the sub has received a serial packet from the mini sub
-    if(Serial1.available()>0){
-		//wait a few ms for the data to be received
-		delay(3);
+    if(Serial.available() == STATION_PACKET_SIZE){
 		
 		//Read the serial data
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
@@ -313,9 +310,10 @@ void loop() {
 		currentSubData[6] = ballastPositionCurrent;
 		currentSubData[7] = motorTempCurrent;
 		currentSubData[8] = waterSenseCurrent;
+		currentSubData[9] = batteryVoltage;
 		
 		//Write the serial data:
-		Serial1.write(currentSubData, SUB_PACKET_SIZE);
+		Serial.write(currentSubData, SUB_PACKET_SIZE);
 		
 		isUpdated = true;
 	}
