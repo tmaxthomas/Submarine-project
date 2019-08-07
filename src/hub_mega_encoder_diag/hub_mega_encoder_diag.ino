@@ -166,7 +166,7 @@ uint16_t aftDiveSetpoint = 			320;
 uint16_t foreDiveSetpoint = 		390;
 uint16_t headLightSetpoint = 		0;
 int16_t spoolSetpoint = 			0;
-uint16_t ballastSetpoint = 			0;
+int16_t ballastSetpoint = 			0;
 
 //temp values used for unit conversion in setpoint assignment
 int8_t driveDelta = 				0;

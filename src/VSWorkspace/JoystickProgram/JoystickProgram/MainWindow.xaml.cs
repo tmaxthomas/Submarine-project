@@ -202,9 +202,9 @@ namespace JoystickProgram{
                     if (serialReceiveDelayCounter == 2)
                     {
 
-                        if (SerialPort1.BytesToRead == 9)
+                        if (SerialPort1.BytesToRead == 10)
                         {
-                            for (int i = 0; i < 9; i++)
+                            for (int i = 0; i < 10; i++)
                             {
                                 Console.Write(SerialPort1.ReadByte());
                                 Console.Write(" ");

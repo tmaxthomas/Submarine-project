@@ -96,9 +96,9 @@ const uint8_t EMAG = 			47;
  * MACROS/DEFINES *
  *****************/
 const uint16_t BAUD_RATE = 					9600;
-const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  20;
+const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  10;
 const uint8_t SENSORS_UPDATE_COUNT =		20;
-const uint8_t CONTROL_UPDATE_COUNT = 		5;
+const uint8_t CONTROL_UPDATE_COUNT = 		3;
 const uint16_t THREAD_FREQ = 				500;
 
 /*************
@@ -166,8 +166,8 @@ uint16_t rudderSetpoint = 			400;
 uint16_t aftDiveSetpoint = 			320;
 uint16_t foreDiveSetpoint = 		390;
 uint16_t headLightSetpoint = 		0;
-uint16_t spoolSetpoint = 			0;
-uint16_t ballastSetpoint = 			0;
+int16_t spoolSetpoint = 			0;
+int16_t ballastSetpoint = 			0;
 
 //temp values used for unit conversion in setpoint assignment
 int8_t driveDelta = 				0;
@@ -194,13 +194,13 @@ byte currentSubData[SUB_PACKET_SIZE];
 /**************************
 * Spooling Lookup Indices *
 ***************************/
-const uint16_t SPOOL_FIRST_INTERVAL = 	52;
-const uint16_t SPOOL_SECOND_INTERVAL = 	104;
-const uint16_t SPOOL_THIRD_INTERVAL = 	156;
-const uint16_t SPOOL_FOURTH_INTERVAL = 	208;
-const uint16_t SPOOL_FIFTH_INTERVAL =	260;
+const uint16_t SPOOL_FIRST_INTERVAL = 	106;
+const uint16_t SPOOL_SECOND_INTERVAL = 	212;
+const uint16_t SPOOL_THIRD_INTERVAL = 	318;
+const uint16_t SPOOL_FOURTH_INTERVAL = 	424;
+const uint16_t SPOOL_FIFTH_INTERVAL =	530;
 
-const uint16_t CARRIAGE_SOFT_LIMIT = 	300;
+const uint16_t CARRIAGE_SOFT_LIMIT = 	155;
  
 /**********
 * GLOBALS *
@@ -222,6 +222,11 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 //Setup Routine
 void setup() {
+	//first make sure the encoder counts a positive increase. 
+    digitalWrite(CARRIAGE_SENSE, HIGH);
+	digitalWrite(BALLAST_SENSE, HIGH);
+	digitalWrite(SPOOL_SENSE, HIGH);
+	
     //Radio/mini-sub Serial Initiation
 	Serial1.begin(BAUD_RATE);    
 	
@@ -281,6 +286,7 @@ void loop() {
 		
 		headLightSetpoint = currentStationData[4] * 40;
 		
+		/*
 		spoolSetpoint = 0;
 		spoolSetpoint = currentStationData[5];
 		spoolSetpoint = spoolSetpoint << 8;
@@ -291,6 +297,7 @@ void loop() {
 		ballastSetpoint = ballastSetpoint << 8;
 		ballastSetpoint = ballastSetpoint | currentStationData[8];
 		
+		*/
 		/*
 		Now construct the return serial packet and write it
 		this way the sub only transmits data when it receives it,
@@ -356,6 +363,7 @@ void loop() {
 	1. Updates the ballast position with new setpoint data.
 	
 	*/
+	/*
 	if(updateControlCounter > CONTROL_UPDATE_COUNT){
 		//Ballast control algorithm. setpoint increases as water is drawn in:
 		if(ballastSetpoint == ballastPositionCurrent){
@@ -375,17 +383,17 @@ void loop() {
 		}
 		//Spooling out
 		else if(spoolSetpoint > spoolPositionCurrent){
-			pwm.setPWM(SPOOL_SERVO, 0, 355);
+			pwm.setPWM(SPOOL_SERVO, 0, 357);
 			setCarriage(1);
 		}
 		//spooling in
 		else if(spoolSetpoint < spoolPositionCurrent){
-			pwm.setPWM(SPOOL_SERVO, 0, 390);
+			pwm.setPWM(SPOOL_SERVO, 0, 389);
 			setCarriage(-1);
 		}
 		updateControlCounter = 0;
 	}
-	
+	*/
 	/*
 	Enter this in multiples of the thread refresh rate. Peforms these actions:
 	1. Gets analogRead of rudder, aft Dive, fore Dive, motor temp, water sense,
