@@ -26,7 +26,7 @@ namespace JoystickProgram{
 
 
         private bool isEnabled = false;
-        SerialPort SerialPort1 = new SerialPort();
+        
 
         //private DispatcherTimer timer;
 
@@ -104,6 +104,14 @@ namespace JoystickProgram{
             // Acquire the joystick
             joystick.Acquire();
 
+            SerialPort SerialPort1 = new SerialPort();
+            //SerialPort1.PortName = SerialComboBox.Text;
+            SerialPort1.PortName = "COM4";
+            SerialPort1.BaudRate = 9600;
+            SerialPort1.Open();
+
+            isEnabled = true;
+
             while (true)
             {
                 if (isEnabled)
@@ -131,7 +139,7 @@ namespace JoystickProgram{
                         if (state.RawOffset == 4)
                         {
                             foreDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                            aftDiveSetpoint = (SByte)(-1 * aftDiveSetpoint);
+                            aftDiveSetpoint = (SByte)(-1 * foreDiveSetpoint);
 
                         }
 
@@ -194,29 +202,33 @@ namespace JoystickProgram{
                     }
 
                     serialTransmitCounter++;
-
+                    
                     if (SerialPort1.BytesToRead != 0)
                     {
                         serialReceiveDelayCounter++;
                     }
+                    
                     if (serialReceiveDelayCounter == 2)
                     {
 
                         if (SerialPort1.BytesToRead == 10)
                         {
+                            /*
                             TextBox1.Text = "";
                             for (int i = 0; i < 10; i++)
                             {
                                 TextBox1.Text += SerialPort1.ReadByte();
                                 TextBox1.Text += " \n";
-                                Console.Write(SerialPort1.ReadByte());
-                                Console.Write(" ");
+                               // Console.Write(SerialPort1.ReadByte());
+                              //  Console.Write(" ");
                             }
-                            Console.WriteLine(" ");
+                          //  Console.WriteLine(" ");
+                          */
                         }
 
                         serialReceiveDelayCounter = 0;
                     }
+                    
                 }
 
                 Thread.Sleep(10);
@@ -344,11 +356,11 @@ namespace JoystickProgram{
         {
             try
             {
-
+                /*
                 SerialPort1.PortName = SerialComboBox.Text;
                 SerialPort1.BaudRate = 9600;
                 SerialPort1.Open();
-
+                */
                 isEnabled = true;
 
                 /*
