@@ -130,15 +130,15 @@ namespace JoystickProgram{
                         //Y Change - Dive Angle
                         if (state.RawOffset == 4)
                         {
-                            aftDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                            foreDiveSetpoint = (SByte)(-1 * aftDiveSetpoint);
+                            foreDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
+                            aftDiveSetpoint = (SByte)(-1 * aftDiveSetpoint);
 
                         }
 
                         //Z Change - Throttle
                         if (state.RawOffset == 8)
                         {
-                            driveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
+                            driveSetpoint = (SByte)((state.Value - 32768) / 500);
                         }
 
                         //Extra Axis - Spool (light up knob on the side of throttle)
@@ -204,8 +204,11 @@ namespace JoystickProgram{
 
                         if (SerialPort1.BytesToRead == 10)
                         {
+                            TextBox1.Text = "";
                             for (int i = 0; i < 10; i++)
                             {
+                                TextBox1.Text += SerialPort1.ReadByte();
+                                TextBox1.Text += " \n";
                                 Console.Write(SerialPort1.ReadByte());
                                 Console.Write(" ");
                             }
