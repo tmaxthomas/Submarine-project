@@ -26,6 +26,7 @@ namespace JoystickProgram{
 
 
         private bool isEnabled = false;
+        private String serialPortID = "";
         
 
         //private DispatcherTimer timer;
@@ -89,9 +90,7 @@ namespace JoystickProgram{
                     joystickGuid = deviceInstance.InstanceGuid;
 
             // If Joystick not found, throws an error
-            if (joystickGuid == Guid.Empty)
-            {
-                NoJoystickFoundText.IsEnabled = true;
+            if (joystickGuid == Guid.Empty){
                 return;
             }
 
@@ -106,11 +105,15 @@ namespace JoystickProgram{
 
             SerialPort SerialPort1 = new SerialPort();
             //SerialPort1.PortName = SerialComboBox.Text;
-            SerialPort1.PortName = "COM4";
+            SerialPort1.PortName = serialPortID;
             SerialPort1.BaudRate = 9600;
-            SerialPort1.Open();
-
-            isEnabled = true;
+            try{
+                SerialPort1.Open();
+                isEnabled = true;
+            }
+            catch{
+                isEnabled = false;
+            }
 
             while (true)
             {
@@ -136,7 +139,7 @@ namespace JoystickProgram{
                         }
 
                         //Y Change - Dive Angle
-                        if (state.RawOffset == 4)
+                        else if (state.RawOffset == 4)
                         {
                             foreDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
                             aftDiveSetpoint = (SByte)(-1 * foreDiveSetpoint);
@@ -144,25 +147,25 @@ namespace JoystickProgram{
                         }
 
                         //Z Change - Throttle
-                        if (state.RawOffset == 8)
+                        else if (state.RawOffset == 8)
                         {
                             driveSetpoint = (SByte)((state.Value - 32768) / 500);
                         }
 
                         //Extra Axis - Spool (light up knob on the side of throttle)
-                        if (state.RawOffset == 12)
+                        else if (state.RawOffset == 12)
                         {
                             spoolSetpoint = (UInt16)(state.Value / 94);
                         }
 
                         //Extra Axis - Ballast (light up knob on top of throttle)
-                        if (state.RawOffset == 16)
+                        else if (state.RawOffset == 16)
                         {
                             ballastSetpoint = (UInt16)(state.Value / 180);
                         }
 
                         //Button - headlights
-                        if (state.RawOffset == 48)
+                        else if (state.RawOffset == 48)
                         {
                             if (state.Value == 128)
                             {
@@ -235,161 +238,12 @@ namespace JoystickProgram{
             }
             
         }
-        /*
-        private void timer1_Tick(object sender, EventArgs e){
-            
-            if (isEnabled)
-            {
-                joystick.Poll();
-                var datas = joystick.GetBufferedData();
-                /*
-                 *  RawOffset - Button or Axis
-                 *      X: 0
-                 *      Y: 4
-                 *      Z: 8
-                 *      ButtonTrigger: 48
-                 *  Value - the value of the axis or button (axis are uint16_t, buttons are 128 when pressed, 0 when released)
-                 *
-                foreach (var state in datas)
-                {
-
-                    //X Change - Rudder
-                    if (state.RawOffset == 0)
-                    {
-                        rudderSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                    }
-
-                    //Y Change - Dive Angle
-                    if (state.RawOffset == 4)
-                    {
-                        aftDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                        foreDiveSetpoint = (SByte)(-1 * aftDiveSetpoint);
-
-                    }
-
-                    //Z Change - Throttle
-                    if (state.RawOffset == 8)
-                    {
-                        driveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                    }
-
-                    //Extra Axis - Spool (light up knob on the side of throttle)
-                    if (state.RawOffset == 12)
-                    {
-                        spoolSetpoint = (UInt16)(state.Value / 94);
-                    }
-
-                    //Extra Axis - Ballast (light up knob on top of throttle)
-                    if (state.RawOffset == 16)
-                    {
-                        ballastSetpoint = (UInt16)(state.Value / 180);
-                    }
-
-                    //Button - headlights
-                    if (state.RawOffset == 48)
-                    {
-                        if (state.Value == 128)
-                        {
-                            if (headlightSwitch)
-                            {
-                                headLightSetpoint = 100;
-                                headlightSwitch = false;
-                            }
-                            else
-                            {
-                                headLightSetpoint = 0;
-                                headlightSwitch = true;
-                            }
-                        }
-                    }
-
-                }
-
-                //Serial Data Transmit
-                if (serialTransmitCounter == 5)
-                {
-                    Byte[] stationPacket = new byte[9];
-
-                    stationPacket[0] = (Byte)driveSetpoint;
-                    stationPacket[1] = (Byte)rudderSetpoint;
-                    stationPacket[2] = (Byte)aftDiveSetpoint;
-                    stationPacket[3] = (Byte)foreDiveSetpoint;
-                    stationPacket[4] = headLightSetpoint;
-                    stationPacket[5] = (Byte)(spoolSetpoint >> 8);
-                    stationPacket[6] = (Byte)(spoolSetpoint);
-                    stationPacket[7] = (Byte)(ballastSetpoint >> 8);
-                    stationPacket[8] = (Byte)(ballastSetpoint);
-
-                    SerialPort1.Write(stationPacket, 0, stationPacket.Length);
-                    // Console.WriteLine("test");
-                    serialTransmitCounter = 0;
-                }
-
-                serialTransmitCounter++;
-
-                if (SerialPort1.BytesToRead != 0)
-                {
-                    serialReceiveDelayCounter++;
-                }
-                if (serialReceiveDelayCounter == 2)
-                {
-
-                    if (SerialPort1.BytesToRead == 9)
-                    {
-                        for (int i = 0; i < 9; i++)
-                        {
-                            Console.Write(SerialPort1.ReadByte());
-                            Console.Write(" ");
-                        }
-                        Console.WriteLine(" ");
-                    }
-
-                    serialReceiveDelayCounter = 0;
-                }
-            }
-
-            
-
-            }
-            */
             private void SerialButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                /*
-                SerialPort1.PortName = SerialComboBox.Text;
-                SerialPort1.BaudRate = 9600;
-                SerialPort1.Open();
-                */
+
+                serialPortID = SerialComboBox.Text;
                 isEnabled = true;
 
-                /*
-                
-                byte[] myByteArray = { 2, 4 };
-                SerialPort1.Write(myByteArray, 0, 2);
-                
-                while (SerialPort1.BytesToRead != 2) { }
-                Console.WriteLine(SerialPort1.BytesToRead);
-                Console.WriteLine(SerialPort1.ReadByte());
-                Console.WriteLine(SerialPort1.ReadByte());
-
-                //Console.Write(SerialPort1.ReadByte());
-                testText.IsEnabled = true;
-                /*byte[] myReceivedData = null;
-
-                SerialPort1.Read(myReceivedData, 0, 2);
-                
-                String myText = myReceivedData[0].ToString();
-                myText += myReceivedData[1].ToString();
-
-                TextBox1.Text = myText;
-              //  isSerialEnabled = false;
-              */
-            }
-            catch
-            {
-                isEnabled = false;
-            }
             if (isEnabled)
             {
                 SpoolFeedbackSlider.IsEnabled = true;
@@ -406,12 +260,7 @@ namespace JoystickProgram{
                 MotorTempSlider.IsEnabled = true;
                 ThrottleSetpointSlider.IsEnabled = true;
                 HeadlightsCheckbox.IsEnabled = true;
-
-                
-                
-
-                
-                
+ 
             }
         }
     }
