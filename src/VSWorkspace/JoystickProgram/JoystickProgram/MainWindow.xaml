@@ -16,7 +16,7 @@
         <Label x:Name="SetpointDataLabel" Content="Setpoint Data From Joystick" Grid.Column="1" HorizontalAlignment="Left" Height="35" Margin="703,57,0,0" VerticalAlignment="Top" Width="239"/>
         <Label x:Name="FeedbackDataLabel" Content="Feedback Data from Submarine" Grid.Column="1" HorizontalAlignment="Left" Height="24" Margin="110,57,0,0" VerticalAlignment="Top" Width="224"/>
         <Border BorderBrush="Black" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="396" Margin="496,168,0,0" VerticalAlignment="Top" Width="2"/>
-        <Slider x:Name="ThrottleSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="715,136,0,0" VerticalAlignment="Top" Width="198" Panel.ZIndex="2" Minimum="-100" Maximum="100" IsEnabled="False"/>
+        <Slider x:Name="ThrottleSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="29" Margin="715,136,0,0" VerticalAlignment="Top" Width="198" Panel.ZIndex="2" Minimum="-100" Maximum="100" IsEnabled="False" ValueChanged="ThrottleSetpointSlider_ValueChanged"/>
         <Slider x:Name="BallastSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="715,365,0,0" VerticalAlignment="Top" Width="198" Maximum="365" IsEnabled="False"/>
         <Slider x:Name="DiveAngleSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="715,211,0,0" VerticalAlignment="Top" Width="198" Maximum="100" Minimum="-100" IsEnabled="False"/>
         <Slider x:Name="SpoolSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="715,432,0,0" VerticalAlignment="Top" Width="198" Maximum="700" IsEnabled="False"/>
@@ -38,7 +38,7 @@
         <Slider x:Name="AftDiveSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,136,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
         <Slider x:Name="BatteryVoltageSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,241,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False"/>
         <Slider x:Name="BallastFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,310,0,0" VerticalAlignment="Top" Width="145" Maximum="365" IsEnabled="False"/>
-        <Slider x:Name="MotorTempSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,390,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False"/>
+        <Slider x:Name="MotorTempSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,390,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="255"/>
         <Slider x:Name="ForeDiveSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,136,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
         <Slider x:Name="RudderFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,236,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
         <Slider x:Name="WaterSensorSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,310,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False"/>

@@ -287,7 +287,7 @@ void loop() {
 		spoolSetpoint = 0;
 		spoolSetpoint = currentStationData[5];
 		spoolSetpoint = spoolSetpoint << 8;
-		spoolSetpoint = spoolSetpoint | currentStationData[6];
+		spoolSetpoint = spoolSetpoint | currentStationData[6]; //need cast here
 		
 		ballastSetpoint = 0;
 		ballastSetpoint = currentStationData[7];

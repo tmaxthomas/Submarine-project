@@ -29,7 +29,7 @@ namespace JoystickProgram{
         private String serialPortID = "";
         
 
-        //private DispatcherTimer timer;
+        private DispatcherTimer timer;
 
         // Initialize DirectInput
         DirectInput directInput = new DirectInput();
@@ -51,6 +51,17 @@ namespace JoystickProgram{
         int serialTransmitCounter = 0;
         int serialReceiveDelayCounter = 0;
 
+        //Submarine Running Variables
+        SByte rudderPosition = 0;
+        SByte aftDivePosition = 0;
+        SByte foreDivePosition = 0;
+        UInt16 spoolPosition = 0;
+        UInt16 ballastPosition = 0;
+        Byte motorTemp = 0;
+        Byte waterSense = 0;
+        Byte batteryVoltage = 0;
+
+
 
         public MainWindow(){
             InitializeComponent();
@@ -60,24 +71,48 @@ namespace JoystickProgram{
                 SerialComboBox.Items.Add(ports.ElementAt(i));
             }
 
-            /*
+            
             Loaded += new RoutedEventHandler(Window1_Loaded);
-            */
+            
             Thread thread1 = new Thread(runningThread);
             thread1.Start();
 
         }
-        /*
+        
         void Window1_Loaded(object sender, RoutedEventArgs e){
 
             timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(10);
-            timer.Tick += timer1_Tick;
+            timer.Tick += new EventHandler(dispatcherTimer_Tick);
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 250);
             timer.Start();
+        }
+        
+        private void dispatcherTimer_Tick(object sender, EventArgs e) {
+            updateFrame();
+        }
+
+        public void updateFrame() {
+            SpoolFeedbackSlider.Value = spoolPosition;
+            BallastFeedbackSlider.Value = ballastPosition;
+            AftDiveSlider.Value = aftDivePosition;
+            ForeDiveSlider.Value = foreDivePosition;
+            RudderFeedbackSlider.Value = rudderPosition;
+            WaterSensorSlider.Value = waterSense;
+            BatteryVoltageSlider.Value = batteryVoltage;
+            MotorTempSlider.Value = motorTemp;
+
+            ThrottleSetpointSlider.Value = driveSetpoint * -1;
+            DiveAngleSlider.Value = foreDiveSetpoint;
+            RudderAngleSlider.Value = rudderSetpoint * -1;
+            BallastSetpointSlider.Value = ballastSetpoint;
+            SpoolSetpointSlider.Value = spoolSetpoint;
+            HeadlightsCheckbox.IsChecked = headlightSwitch;
 
         }
-        */
+
         public void runningThread(){
+
+            while (!isEnabled) ;
 
             foreach (var deviceInstance in directInput.GetDevices(DeviceType.FirstPerson,
                             DeviceEnumerationFlags.AllDevices))
@@ -104,7 +139,6 @@ namespace JoystickProgram{
             joystick.Acquire();
 
             SerialPort SerialPort1 = new SerialPort();
-            //SerialPort1.PortName = SerialComboBox.Text;
             SerialPort1.PortName = serialPortID;
             SerialPort1.BaudRate = 9600;
             try{
@@ -115,10 +149,8 @@ namespace JoystickProgram{
                 isEnabled = false;
             }
 
-            while (true)
-            {
-                if (isEnabled)
-                {
+            while (true){
+                if (isEnabled){
                     joystick.Poll();
                     var datas = joystick.GetBufferedData();
                     /*
@@ -129,53 +161,43 @@ namespace JoystickProgram{
                      *      ButtonTrigger: 48
                      *  Value - the value of the axis or button (axis are uint16_t, buttons are 128 when pressed, 0 when released)
                      */
-                    foreach (var state in datas)
-                    {
+                    foreach (var state in datas){
 
                         //X Change - Rudder
-                        if (state.RawOffset == 0)
-                        {
+                        if (state.RawOffset == 0){
                             rudderSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
                         }
 
                         //Y Change - Dive Angle
-                        else if (state.RawOffset == 4)
-                        {
+                        else if (state.RawOffset == 4){
                             foreDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
                             aftDiveSetpoint = (SByte)(-1 * foreDiveSetpoint);
 
                         }
 
                         //Z Change - Throttle
-                        else if (state.RawOffset == 8)
-                        {
+                        else if (state.RawOffset == 8){
                             driveSetpoint = (SByte)((state.Value - 32768) / 500);
                         }
 
                         //Extra Axis - Spool (light up knob on the side of throttle)
-                        else if (state.RawOffset == 12)
-                        {
+                        else if (state.RawOffset == 12){
                             spoolSetpoint = (UInt16)(state.Value / 94);
                         }
 
                         //Extra Axis - Ballast (light up knob on top of throttle)
-                        else if (state.RawOffset == 16)
-                        {
+                        else if (state.RawOffset == 16){
                             ballastSetpoint = (UInt16)(state.Value / 180);
                         }
 
                         //Button - headlights
-                        else if (state.RawOffset == 48)
-                        {
-                            if (state.Value == 128)
-                            {
-                                if (headlightSwitch)
-                                {
+                        else if (state.RawOffset == 48){
+                            if (state.Value == 128){
+                                if (headlightSwitch){
                                     headLightSetpoint = 100;
                                     headlightSwitch = false;
                                 }
-                                else
-                                {
+                                else{
                                     headLightSetpoint = 0;
                                     headlightSwitch = true;
                                 }
@@ -185,8 +207,7 @@ namespace JoystickProgram{
                     }
 
                     //Serial Data Transmit
-                    if (serialTransmitCounter == 5)
-                    {
+                    if (serialTransmitCounter == 5){
                         Byte[] stationPacket = new byte[9];
 
                         stationPacket[0] = (Byte)driveSetpoint;
@@ -200,33 +221,43 @@ namespace JoystickProgram{
                         stationPacket[8] = (Byte)(ballastSetpoint);
 
                         SerialPort1.Write(stationPacket, 0, stationPacket.Length);
-                        // Console.WriteLine("test");
                         serialTransmitCounter = 0;
                     }
 
                     serialTransmitCounter++;
                     
-                    if (SerialPort1.BytesToRead != 0)
-                    {
+                    if (SerialPort1.BytesToRead != 0){
                         serialReceiveDelayCounter++;
                     }
                     
-                    if (serialReceiveDelayCounter == 2)
-                    {
+                    if (serialReceiveDelayCounter == 2){
 
-                        if (SerialPort1.BytesToRead == 10)
-                        {
-                            /*
-                            TextBox1.Text = "";
-                            for (int i = 0; i < 10; i++)
-                            {
-                                TextBox1.Text += SerialPort1.ReadByte();
-                                TextBox1.Text += " \n";
-                               // Console.Write(SerialPort1.ReadByte());
-                              //  Console.Write(" ");
+                        if (SerialPort1.BytesToRead == 10){
+
+                            Byte[] subPacket = new byte[10];
+
+                            for(int i = 0; i < subPacket.Length; i++) {
+                                subPacket[i] = (Byte)SerialPort1.ReadByte();
                             }
-                          //  Console.WriteLine(" ");
-                          */
+
+                            rudderPosition = (SByte)subPacket[0];
+                            aftDivePosition = (SByte)subPacket[1];
+                            foreDivePosition = (SByte)subPacket[2];
+                            spoolPosition = (UInt16)subPacket[3];
+                            spoolPosition = (UInt16)(spoolPosition << 8);
+                            spoolPosition = (UInt16)(spoolPosition | (UInt16)subPacket[4]);
+                            ballastPosition = (UInt16)subPacket[5];
+                            ballastPosition = (UInt16)(ballastPosition << 8);
+                            ballastPosition = (UInt16)(ballastPosition | (UInt16)subPacket[6]);
+                            motorTemp = subPacket[7];
+                            waterSense = subPacket[8];
+                            batteryVoltage = subPacket[9];
+
+                           // updateFrame();
+
+                        }
+                        else {
+                            SerialPort1.DiscardInBuffer();
                         }
 
                         serialReceiveDelayCounter = 0;
@@ -238,30 +269,26 @@ namespace JoystickProgram{
             }
             
         }
-            private void SerialButton_Click(object sender, RoutedEventArgs e)
-        {
+        private void SerialButton_Click(object sender, RoutedEventArgs e){
+            serialPortID = SerialComboBox.Text;
+            isEnabled = true;
 
-                serialPortID = SerialComboBox.Text;
-                isEnabled = true;
-
-            if (isEnabled)
-            {
-                SpoolFeedbackSlider.IsEnabled = true;
-                SpoolSetpointSlider.IsEnabled = true;
-                BallastFeedbackSlider.IsEnabled = true;
-                BallastSetpointSlider.IsEnabled = true;
-                DiveAngleSlider.IsEnabled = true;
-                ForeDiveSlider.IsEnabled = true;
-                AftDiveSlider.IsEnabled = true;
-                RudderFeedbackSlider.IsEnabled = true;
-                RudderAngleSlider.IsEnabled = true;
-                WaterSensorSlider.IsEnabled = true;
-                BatteryVoltageSlider.IsEnabled = true;
-                MotorTempSlider.IsEnabled = true;
-                ThrottleSetpointSlider.IsEnabled = true;
-                HeadlightsCheckbox.IsEnabled = true;
+            SpoolFeedbackSlider.IsEnabled = true;
+            SpoolSetpointSlider.IsEnabled = true;
+            BallastFeedbackSlider.IsEnabled = true;
+            BallastSetpointSlider.IsEnabled = true;
+            DiveAngleSlider.IsEnabled = true;
+            ForeDiveSlider.IsEnabled = true;
+            AftDiveSlider.IsEnabled = true;
+            RudderFeedbackSlider.IsEnabled = true;
+            RudderAngleSlider.IsEnabled = true;
+            WaterSensorSlider.IsEnabled = true;
+            BatteryVoltageSlider.IsEnabled = true;
+            MotorTempSlider.IsEnabled = true;
+            ThrottleSetpointSlider.IsEnabled = true;
+            HeadlightsCheckbox.IsEnabled = true;
  
-            }
         }
+
     }
 }
