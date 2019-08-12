@@ -50,6 +50,7 @@ struct SubPacket{
 	uint16_t ballastPosition;
 	uint8_t motorTemp;
 	uint8_t waterSense;
+	uint8_t batteryVoltage;
 	
 };
 
@@ -60,15 +61,9 @@ Variables holding the latest received operational data from the sub.
 Assigned to and transmitted by ack packets.
 */
 
-const uint8_t SUB_PACKET_SIZE = 	9;
+const uint8_t SUB_PACKET_SIZE = 	10;
 byte currentSubData[SUB_PACKET_SIZE];
-int8_t rudderPositionCurrent = 		0;
-int8_t aftDivePositionCurrent = 	0;
-int8_t foreDivePositionCurrent = 	0;
-uint16_t spoolPositionCurrent = 	0;
-uint16_t ballastPositionCurrent = 	0;
-uint8_t motorTempCurrent = 			0;
-uint8_t waterSenseCurrent = 		0;
+
 
 /*Current Station Setpoint Data
 Variables holding the latest received setpoint data from the base station.
@@ -81,7 +76,7 @@ byte currentStationData[STATION_PACKET_SIZE];
 
 void setup(){
 	//init serial
-    Serial.begin(115200);
+    Serial.begin(9600);
 	//init radio
     _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN);
 }
@@ -91,56 +86,46 @@ void loop(){
 	if(Serial.available()>0){
 		//wait a few ms for packet to finish transmitting (might be unnessary)
 		delay(3);
-		for(uint8_t i = 0; i < SUB_PACKET_SIZE; i++){
-			currentSubData[i] = Serial.read();
+		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
+			currentStationData[i] = Serial.read();
 		}
-		rudderPositionCurrent = currentSubData[0];
-		aftDivePositionCurrent = currentSubData[1];
-		foreDivePositionCurrent = currentSubData[2];
-		//Handle the bitshifting -> 2 bytes into a uint16_t
-		spoolPositionCurrent = currentSubData[3];
-		spoolPositionCurrent = spoolPositionCurrent << 8;
-		spoolPositionCurrent = spoolPositionCurrent | currentSubData[4];
-		//Handle the bitshifting -> 2 bytes into a uint16_t
-		ballastPositionCurrent = currentSubData[5];
-		ballastPositionCurrent = ballastPositionCurrent << 8;
-		ballastPositionCurrent = ballastPositionCurrent | currentSubData[6];
-		motorTempCurrent = currentSubData[7];
-		waterSenseCurrent = currentSubData[8];
-		//At this point, the 'current' vars contain the latest values
+		
+		StationPacket stationData;
+		stationData.driveSetpoint = currentStationData[0];
+		stationData.rudderSetpoint = currentStationData[1];
+		stationData.aftDiveSetpoint = currentStationData[2];
+		stationData.foreDiveSetpoint = currentStationData[3];
+		stationData.headLightSetpoint = currentStationData[4];
+		stationData.spoolSetpoint = ((uint16_t)currentStationData[5]) << 8;
+		stationData.spoolSetpoint = stationData.spoolSetpoint | ((uint16_t)currentStationData[6]);
+		stationData.ballastSetpoint = ((uint16_t)currentStationData[7]) << 8;
+		stationData.ballastSetpoint = stationData.ballastSetpoint | ((uint16_t)currentStationData[8]);
+		
+		_radio.send(DESTINATION_RADIO_ID, &stationData, sizeof(stationData));
+		
 	}
 	
 	//Enter if data received from base station
-	if(_radio.hasData()){
+	if(_radio.hasAckData()){
 		//wait a few ms for packet to finish transmitting (might be unnessary)
 		delay(3);
 		
-		StationPacket stationData;
-		_radio.readData(&stationData);
-		//Assign the new packet data to the transmit byte array
-		currentStationData[0] = stationData.driveSetpoint;
-		currentStationData[1] = stationData.rudderSetpoint;
-		currentStationData[2] = stationData.aftDiveSetpoint;
-		currentStationData[3] = stationData.foreDiveSetpoint;
-		currentStationData[4] = stationData.headLightSetpoint;
-		currentStationData[5] = stationData.spoolSetpoint >> 8;
-		currentStationData[6] = stationData.spoolSetpoint;
-		currentStationData[7] = stationData.ballastSetpoint >> 8;
-		currentStationData[8] = stationData.ballastSetpoint;
-		
-		//Write the data to the serial bus:
-		Serial.write(currentStationData, STATION_PACKET_SIZE);
-		
-		//Now create the acknoledge packet with the current Sub Data
 		SubPacket subData;
-		subData.rudderPosition = rudderPositionCurrent;
-		subData.aftDivePosition = aftDivePositionCurrent;
-		subData.foreDivePosition = foreDivePositionCurrent;
-		subData.spoolPosition = spoolPositionCurrent;
-		subData.ballastPosition = ballastPositionCurrent;
-		subData.motorTemp = motorTempCurrent;
-		subData.waterSense = waterSenseCurrent;
+		_radio.readData(&subData);
 		
-		_radio.addAckData(&subData, sizeof(subData));
+		currentSubData[0] = subData.rudderPosition;
+		currentSubData[1] = subData.aftDivePosition;
+		currentSubData[2] = subData.foreDivePosition;
+		currentSubData[3] = (uint8_t)(subData.spoolPosition >> 8);
+		currentSubData[4] = (uint8_t)subData.spoolPosition;
+		currentSubData[5] = (uint8_t)(subData.ballastPosition >> 8);
+		currentSubData[6] = (uint8_t)subData.ballastPosition;
+		currentSubData[7] = subData.motorTemp;
+		currentSubData[8] = subData.waterSense;
+		currentSubData[9] = subData.batteryVoltage;
+		
+		Serial.write(currentSubData, SUB_PACKET_SIZE);
+		
 	}
+	delayMicroseconds(200);
 }

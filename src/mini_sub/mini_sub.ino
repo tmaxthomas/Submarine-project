@@ -81,7 +81,7 @@ byte currentStationData[STATION_PACKET_SIZE];
 
 void setup(){
 	//init serial
-    Serial.begin(115200);
+    Serial.begin(9600);
 	//init radio
     _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN);
 }
@@ -98,13 +98,13 @@ void loop(){
 		aftDivePositionCurrent = currentSubData[1];
 		foreDivePositionCurrent = currentSubData[2];
 		//Handle the bitshifting -> 2 bytes into a uint16_t
-		spoolPositionCurrent = currentSubData[3];
+		spoolPositionCurrent = (uint16_t)currentSubData[3];
 		spoolPositionCurrent = spoolPositionCurrent << 8;
-		spoolPositionCurrent = spoolPositionCurrent | currentSubData[4];
+		spoolPositionCurrent = spoolPositionCurrent | ((uint16_t)currentSubData[4]);
 		//Handle the bitshifting -> 2 bytes into a uint16_t
-		ballastPositionCurrent = currentSubData[5];
+		ballastPositionCurrent = (uint16_t)currentSubData[5];
 		ballastPositionCurrent = ballastPositionCurrent << 8;
-		ballastPositionCurrent = ballastPositionCurrent | currentSubData[6];
+		ballastPositionCurrent = ballastPositionCurrent | ((uint16_t)currentSubData[6]);
 		motorTempCurrent = currentSubData[7];
 		waterSenseCurrent = currentSubData[8];
 		batteryVoltageCurrent = currentSubData[9];
@@ -124,10 +124,10 @@ void loop(){
 		currentStationData[2] = stationData.aftDiveSetpoint;
 		currentStationData[3] = stationData.foreDiveSetpoint;
 		currentStationData[4] = stationData.headLightSetpoint;
-		currentStationData[5] = stationData.spoolSetpoint >> 8;
-		currentStationData[6] = stationData.spoolSetpoint;
-		currentStationData[7] = stationData.ballastSetpoint >> 8;
-		currentStationData[8] = stationData.ballastSetpoint;
+		currentStationData[5] = (uint8_t)(stationData.spoolSetpoint >> 8);
+		currentStationData[6] = (uint8_t)stationData.spoolSetpoint;
+		currentStationData[7] = (uint8_t)(stationData.ballastSetpoint >> 8);
+		currentStationData[8] = (uint8_t)stationData.ballastSetpoint;
 		
 		//Write the data to the serial bus:
 		Serial.write(currentStationData, STATION_PACKET_SIZE);
@@ -145,6 +145,8 @@ void loop(){
 		
 		_radio.addAckData(&subData, sizeof(subData));
 	}
+	
+	delayMicroseconds(200);
 }
 
 

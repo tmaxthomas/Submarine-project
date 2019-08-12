@@ -96,7 +96,7 @@ const uint8_t EMAG = 			47;
  *****************/
 const uint16_t BAUD_RATE = 					9600;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  10;
-const uint8_t SENSORS_UPDATE_COUNT =		20;
+const uint8_t SENSORS_UPDATE_COUNT =		10;
 const uint8_t CONTROL_UPDATE_COUNT = 		3;
 const uint16_t THREAD_FREQ = 				500;
 
@@ -165,8 +165,8 @@ uint16_t rudderSetpoint = 			400;
 uint16_t aftDiveSetpoint = 			320;
 uint16_t foreDiveSetpoint = 		390;
 uint16_t headLightSetpoint = 		0;
-int16_t spoolSetpoint = 			0;
-int16_t ballastSetpoint = 			0;
+uint16_t spoolSetpoint = 			0;
+uint16_t ballastSetpoint = 			0;
 
 //temp values used for unit conversion in setpoint assignment
 int8_t driveDelta = 				0;
@@ -227,7 +227,7 @@ void setup() {
 	digitalWrite(SPOOL_SENSE, HIGH);
 	
     //Radio/mini-sub Serial Initiation
-	Serial.begin(BAUD_RATE);    
+	Serial1.begin(BAUD_RATE);    
 	
 	//Initialize the PWM Driver Board
 	pwm.begin();
@@ -256,7 +256,7 @@ void setup() {
 //Loop Routine
 void loop() {
 	//enter if the sub has received a serial packet from the mini sub
-    if(Serial.available() == STATION_PACKET_SIZE){
+    if(Serial1.available() == STATION_PACKET_SIZE){
 		
 		//Read the serial data
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
@@ -281,20 +281,22 @@ void loop() {
 		foreDiveDelta = currentStationData[3];
 		foreDiveSetpoint = FORE_DIVE_CENTER + foreDiveDelta;
 		
-		headLightSetpoint = currentStationData[4] * 40;
+		headLightSetpoint = currentStationData[4] * 41;
+		if(headLightSetpoint > 4095){
+			headLightSetpoint = 4095;
+		}
 		
-		/*
 		spoolSetpoint = 0;
-		spoolSetpoint = currentStationData[5];
+		spoolSetpoint = (uint16_t)currentStationData[5];
 		spoolSetpoint = spoolSetpoint << 8;
-		spoolSetpoint = spoolSetpoint | currentStationData[6]; //need cast here
+		spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[6]); 
 		
 		ballastSetpoint = 0;
-		ballastSetpoint = currentStationData[7];
+		ballastSetpoint = (uint16_t)currentStationData[7];
 		ballastSetpoint = ballastSetpoint << 8;
-		ballastSetpoint = ballastSetpoint | currentStationData[8];
+		ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[8]);
 		
-		*/
+		
 		/*
 		Now construct the return serial packet and write it
 		this way the sub only transmits data when it receives it,
@@ -304,18 +306,21 @@ void loop() {
 		currentSubData[0] = rudderPositionCurrent;
 		currentSubData[1] = aftDivePositionCurrent;
 		currentSubData[2] = foreDivePositionCurrent;
-		currentSubData[3] = spoolPositionCurrent >> 8;
-		currentSubData[4] = spoolPositionCurrent;
-		currentSubData[5] = ballastPositionCurrent >> 8;
-		currentSubData[6] = ballastPositionCurrent;
+		currentSubData[3] = (uint8_t)(spoolPositionCurrent >> 8);
+		currentSubData[4] = (uint8_t)spoolPositionCurrent;
+		currentSubData[5] = (uint8_t)(ballastPositionCurrent >> 8);
+		currentSubData[6] = (uint8_t)ballastPositionCurrent;
 		currentSubData[7] = motorTempCurrent;
 		currentSubData[8] = waterSenseCurrent;
 		currentSubData[9] = batteryVoltage;
 		
 		//Write the serial data:
-		Serial.write(currentSubData, SUB_PACKET_SIZE);
+		Serial1.write(currentSubData, SUB_PACKET_SIZE);
 		
 		isUpdated = true;
+	}
+	else if(Serial1.available() > STATION_PACKET_SIZE){
+		while(Serial.read() != -1){};
 	}
 	
 	//Update the setpoints if new data has been received:
@@ -353,15 +358,23 @@ void loop() {
 		ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
 		carriagePositionCurrent += updateEncoder(CARRIAGE_MSB, CARRIAGE_LSB, carriageBusLastState);
 		
+		if(spoolPositionCurrent > 1000){
+			spoolPositionCurrent = 0;
+		}
+		if(ballastPositionCurrent > 1000){
+			ballastPositionCurrent = 0;
+		}
+		if(carriagePositionCurrent > 1000){
+			carriagePositionCurrent = 0;
+		}
 		updateSpoolBallastCounter = 0;
 	}
 	
 	/*
 	Enter this in multiples of the thread refresh rate. Performs these actions:
 	1. Updates the ballast position with new setpoint data.
-	
 	*/
-	/*
+	
 	if(updateControlCounter > CONTROL_UPDATE_COUNT){
 		//Ballast control algorithm. setpoint increases as water is drawn in:
 		if(ballastSetpoint == ballastPositionCurrent){
@@ -369,9 +382,11 @@ void loop() {
 		}
 		else if(ballastSetpoint < ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, 325);
+			digitalWrite(BALLAST_SENSE, LOW);
 		}
 		else if(ballastSetpoint > ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, 375);
+			digitalWrite(BALLAST_SENSE, HIGH);
 		}
 		
 		//Now the spool. Setpoint increases as tether is unspooled:
@@ -381,17 +396,19 @@ void loop() {
 		}
 		//Spooling out
 		else if(spoolSetpoint > spoolPositionCurrent){
+			digitalWrite(SPOOL_SENSE, HIGH);
 			pwm.setPWM(SPOOL_SERVO, 0, 357);
 			setCarriage(1);
 		}
 		//spooling in
 		else if(spoolSetpoint < spoolPositionCurrent){
+			digitalWrite(SPOOL_SENSE, LOW);
 			pwm.setPWM(SPOOL_SERVO, 0, 389);
 			setCarriage(-1);
 		}
 		updateControlCounter = 0;
 	}
-	*/
+	
 	/*
 	Enter this in multiples of the thread refresh rate. Peforms these actions:
 	1. Gets analogRead of rudder, aft Dive, fore Dive, motor temp, water sense,
@@ -483,10 +500,12 @@ void setCarriage(int8_t spoolingState){
 }
 void carriagePWMSet(int8_t spoolingState){
 	
-	if(spoolingState == -1 && carriagePositionCurrent <= 0){
+	if(spoolingState == -1 && carriagePositionCurrent >= 0){
 		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MIN);
+		digitalWrite(CARRIAGE_SENSE, LOW);
 	}
-	else if(spoolingState == 1 && carriagePositionCurrent >= CARRIAGE_SOFT_LIMIT){
+	else if(spoolingState == 1 && carriagePositionCurrent <= CARRIAGE_SOFT_LIMIT){
 		pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_MAX);
+		digitalWrite(CARRIAGE_SENSE, HIGH);
 	}	
 }
