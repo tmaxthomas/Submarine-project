@@ -1,4 +1,3 @@
-D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\JoystickProgram.csprojAssemblyReference.cache
 D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\MainWindow.g.cs
 D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\App.g.cs
 D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\JoystickProgram_MarkupCompile.cache
