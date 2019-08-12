@@ -37,6 +37,7 @@ struct StationPacket{
 	uint8_t headLightSetpoint;
 	uint16_t spoolSetpoint;
 	uint16_t ballastSetpoint;
+	uint8_t stationPacketCheck;
 };
 
 //SubPacket - packet to be sent from sub
@@ -49,6 +50,7 @@ struct SubPacket{
 	uint8_t motorTemp;
 	uint8_t waterSense;
 	uint8_t batteryVoltage;
+	uint8_t subPacketCheck;
 	
 };
 
@@ -59,7 +61,7 @@ Variables holding the latest received operational data from the sub.
 Assigned to and transmitted by ack packets.
 */
 
-const uint8_t SUB_PACKET_SIZE = 	10;
+const uint8_t SUB_PACKET_SIZE = 	11;
 byte currentSubData[SUB_PACKET_SIZE];
 int8_t rudderPositionCurrent = 		0;
 int8_t aftDivePositionCurrent = 	0;
@@ -69,13 +71,14 @@ uint16_t ballastPositionCurrent = 	0;
 uint8_t motorTempCurrent = 			0;
 uint8_t waterSenseCurrent = 		0;
 uint8_t batteryVoltageCurrent = 	0;
+uint8_t subPacketCheckCurrent = 	20;
 
 /*Current Station Setpoint Data
 Variables holding the latest received setpoint data from the base station.
 Written over the serial bus once received
 */
 
-const uint8_t STATION_PACKET_SIZE = 9;
+const uint8_t STATION_PACKET_SIZE = 10;
 byte currentStationData[STATION_PACKET_SIZE];
 
 
@@ -108,6 +111,8 @@ void loop(){
 		motorTempCurrent = currentSubData[7];
 		waterSenseCurrent = currentSubData[8];
 		batteryVoltageCurrent = currentSubData[9];
+		subPacketCheckCurrent = currentSubData[10];
+		
 		//At this point, the 'current' vars contain the latest values
 	}
 	
@@ -128,6 +133,7 @@ void loop(){
 		currentStationData[6] = (uint8_t)stationData.spoolSetpoint;
 		currentStationData[7] = (uint8_t)(stationData.ballastSetpoint >> 8);
 		currentStationData[8] = (uint8_t)stationData.ballastSetpoint;
+		currentStationData[9] = stationData.stationPacketCheck;
 		
 		//Write the data to the serial bus:
 		Serial.write(currentStationData, STATION_PACKET_SIZE);

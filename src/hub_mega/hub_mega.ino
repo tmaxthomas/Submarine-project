@@ -174,7 +174,7 @@ int8_t rudderDelta = 				0;
 int8_t aftDiveDelta = 				0;
 int8_t foreDiveDelta = 				0;
 	
-const uint8_t STATION_PACKET_SIZE = 9;
+const uint8_t STATION_PACKET_SIZE = 10;
 byte currentStationData[STATION_PACKET_SIZE];
 
 //SubPacket: Current Running Data of the Submarine. units match those of SubPacket in spreadsheet
@@ -187,7 +187,7 @@ uint8_t motorTempCurrent = 			0;
 uint8_t waterSenseCurrent = 		0;
 uint8_t batteryVoltage = 			0; 
 
-const uint8_t SUB_PACKET_SIZE = 	10;
+const uint8_t SUB_PACKET_SIZE = 	11;
 byte currentSubData[SUB_PACKET_SIZE];
 
 /**************************
@@ -263,61 +263,64 @@ void loop() {
 			currentStationData[i] = Serial1.read();
 		}
 		
-		/*
-		Assign to relevant variables with unit conversion
-		CurrentStationData follows the units laid out in the spreadsheet.
-		local setpoints are all in pwm duty cycle, except spool and ballast setpoints
-		which are given as direct encoder counts
-		*/
-		driveDelta = currentStationData[0];
-		driveSetpoint = DRIVE_CENTER + driveDelta;
+		if(currentStationData[9] == 10){
+			
+			/*
+			Assign to relevant variables with unit conversion
+			CurrentStationData follows the units laid out in the spreadsheet.
+			local setpoints are all in pwm duty cycle, except spool and ballast setpoints
+			which are given as direct encoder counts
+			*/
+			driveDelta = currentStationData[0];
+			driveSetpoint = DRIVE_CENTER + driveDelta;
 		
-		rudderDelta = currentStationData[1];
-		rudderSetpoint = RUDDER_CENTER + rudderDelta;
+			rudderDelta = currentStationData[1];
+			rudderSetpoint = RUDDER_CENTER + rudderDelta;
 		
-		aftDiveDelta = currentStationData[2];
-		aftDiveSetpoint = AFT_DIVE_CENTER + aftDiveDelta;
+			aftDiveDelta = currentStationData[2];
+			aftDiveSetpoint = AFT_DIVE_CENTER + aftDiveDelta;
 		
-		foreDiveDelta = currentStationData[3];
-		foreDiveSetpoint = FORE_DIVE_CENTER + foreDiveDelta;
+			foreDiveDelta = currentStationData[3];
+			foreDiveSetpoint = FORE_DIVE_CENTER + foreDiveDelta;
 		
-		headLightSetpoint = currentStationData[4] * 41;
-		if(headLightSetpoint > 4095){
-			headLightSetpoint = 4095;
+			headLightSetpoint = currentStationData[4] * 41;
+			if(headLightSetpoint > 4095){
+				headLightSetpoint = 4095;
+			}
+		
+			spoolSetpoint = 0;
+			spoolSetpoint = (uint16_t)currentStationData[5];
+			spoolSetpoint = spoolSetpoint << 8;
+			spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[6]); 
+		
+			ballastSetpoint = 0;
+			ballastSetpoint = (uint16_t)currentStationData[7];
+			ballastSetpoint = ballastSetpoint << 8;
+			ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[8]);
+		
+		
+			/*
+			Now construct the return serial packet and write it
+			this way the sub only transmits data when it receives it,
+			which allows for external timing control
+			*/
+		
+			currentSubData[0] = rudderPositionCurrent;
+			currentSubData[1] = aftDivePositionCurrent;
+			currentSubData[2] = foreDivePositionCurrent;
+			currentSubData[3] = (uint8_t)(spoolPositionCurrent >> 8);
+			currentSubData[4] = (uint8_t)spoolPositionCurrent;
+			currentSubData[5] = (uint8_t)(ballastPositionCurrent >> 8);
+			currentSubData[6] = (uint8_t)ballastPositionCurrent;
+			currentSubData[7] = motorTempCurrent;
+			currentSubData[8] = waterSenseCurrent;
+			currentSubData[9] = batteryVoltage;
+		
+			//Write the serial data:
+			Serial1.write(currentSubData, SUB_PACKET_SIZE);
+		
+			isUpdated = true;
 		}
-		
-		spoolSetpoint = 0;
-		spoolSetpoint = (uint16_t)currentStationData[5];
-		spoolSetpoint = spoolSetpoint << 8;
-		spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[6]); 
-		
-		ballastSetpoint = 0;
-		ballastSetpoint = (uint16_t)currentStationData[7];
-		ballastSetpoint = ballastSetpoint << 8;
-		ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[8]);
-		
-		
-		/*
-		Now construct the return serial packet and write it
-		this way the sub only transmits data when it receives it,
-		which allows for external timing control
-		*/
-		
-		currentSubData[0] = rudderPositionCurrent;
-		currentSubData[1] = aftDivePositionCurrent;
-		currentSubData[2] = foreDivePositionCurrent;
-		currentSubData[3] = (uint8_t)(spoolPositionCurrent >> 8);
-		currentSubData[4] = (uint8_t)spoolPositionCurrent;
-		currentSubData[5] = (uint8_t)(ballastPositionCurrent >> 8);
-		currentSubData[6] = (uint8_t)ballastPositionCurrent;
-		currentSubData[7] = motorTempCurrent;
-		currentSubData[8] = waterSenseCurrent;
-		currentSubData[9] = batteryVoltage;
-		
-		//Write the serial data:
-		Serial1.write(currentSubData, SUB_PACKET_SIZE);
-		
-		isUpdated = true;
 	}
 	else if(Serial1.available() > STATION_PACKET_SIZE){
 		while(Serial1.read() != -1){};

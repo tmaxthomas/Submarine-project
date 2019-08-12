@@ -61,7 +61,7 @@ namespace JoystickProgram{
         Byte waterSense = 0;
         Byte batteryVoltage = 0;
 
-
+        String myString = "";
 
         public MainWindow(){
             InitializeComponent();
@@ -108,6 +108,8 @@ namespace JoystickProgram{
             SpoolSetpointSlider.Value = spoolSetpoint;
             HeadlightsCheckbox.IsChecked = headlightSwitch;
 
+            myString = rudderPosition.ToString() + " " + aftDivePosition.ToString() + " " + foreDivePosition.ToString() + " " + spoolPosition.ToString() + " " + ballastPosition.ToString() + " ";
+            TextBox1.Text = myString;
         }
 
         public void runningThread(){
@@ -207,8 +209,8 @@ namespace JoystickProgram{
                     }
 
                     //Serial Data Transmit
-                    if (serialTransmitCounter == 100){
-                        Byte[] stationPacket = new byte[9];
+                    if (serialTransmitCounter == 20){
+                        Byte[] stationPacket = new byte[10];
 
                         stationPacket[0] = (Byte)driveSetpoint;
                         stationPacket[1] = (Byte)rudderSetpoint;
@@ -219,6 +221,7 @@ namespace JoystickProgram{
                         stationPacket[6] = (Byte)(spoolSetpoint);
                         stationPacket[7] = (Byte)(ballastSetpoint >> 8);
                         stationPacket[8] = (Byte)(ballastSetpoint);
+                        stationPacket[9] = (Byte)10;
 
                         SerialPort1.Write(stationPacket, 0, stationPacket.Length);
                         serialTransmitCounter = 0;
@@ -232,9 +235,9 @@ namespace JoystickProgram{
                     
                     if (serialReceiveDelayCounter == 2){
 
-                        if (SerialPort1.BytesToRead == 10){
+                        if (SerialPort1.BytesToRead == 11){
 
-                            Byte[] subPacket = new byte[10];
+                            Byte[] subPacket = new byte[11];
 
                             for(int i = 0; i < subPacket.Length; i++) {
                                 subPacket[i] = (Byte)SerialPort1.ReadByte();
@@ -252,14 +255,43 @@ namespace JoystickProgram{
                             motorTemp = subPacket[7];
                             waterSense = subPacket[8];
                             batteryVoltage = subPacket[9];
+                            //need subPacketCHeck implementation
+
 
                            // updateFrame();
+
+                        }
+                        else if((SerialPort1.BytesToRead % 11) == 0) {
+                            int discardBytes = SerialPort1.BytesToRead - 11;
+                            for(int i = 0; i < discardBytes; i++) {
+                                SerialPort1.ReadByte();
+                            }
+
+                            Byte[] subPacket = new byte[11];
+
+                            for (int i = 0; i < subPacket.Length; i++) {
+                                subPacket[i] = (Byte)SerialPort1.ReadByte();
+                            }
+
+                            rudderPosition = (SByte)subPacket[0];
+                            aftDivePosition = (SByte)subPacket[1];
+                            foreDivePosition = (SByte)subPacket[2];
+                            spoolPosition = (UInt16)subPacket[3];
+                            spoolPosition = (UInt16)(spoolPosition << 8);
+                            spoolPosition = (UInt16)(spoolPosition | (UInt16)subPacket[4]);
+                            ballastPosition = (UInt16)subPacket[5];
+                            ballastPosition = (UInt16)(ballastPosition << 8);
+                            ballastPosition = (UInt16)(ballastPosition | (UInt16)subPacket[6]);
+                            motorTemp = subPacket[7];
+                            waterSense = subPacket[8];
+                            batteryVoltage = subPacket[9];
 
                         }
                         else {
                             SerialPort1.DiscardInBuffer();
                         }
 
+                         
                         serialReceiveDelayCounter = 0;
                     }
                     
@@ -289,6 +321,5 @@ namespace JoystickProgram{
             HeadlightsCheckbox.IsEnabled = true;
  
         }
-
     }
 }
