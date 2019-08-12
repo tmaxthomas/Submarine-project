@@ -18,3 +18,4 @@ D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\ob
 D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\JoystickProgram.csproj.CopyComplete
 D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\JoystickProgram.exe
 D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\JoystickProgram.pdb
+D:\Projects\Submarine-project\src\VSWorkspace\JoystickProgram\JoystickProgram\obj\Debug\JoystickProgram.csprojAssemblyReference.cache
