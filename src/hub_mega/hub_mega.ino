@@ -260,7 +260,7 @@ void loop() {
 		
 		//Read the serial data
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
-			currentStationData[i] = Serial.read();
+			currentStationData[i] = Serial1.read();
 		}
 		
 		/*
@@ -320,7 +320,7 @@ void loop() {
 		isUpdated = true;
 	}
 	else if(Serial1.available() > STATION_PACKET_SIZE){
-		while(Serial.read() != -1){};
+		while(Serial1.read() != -1){};
 	}
 	
 	//Update the setpoints if new data has been received:
@@ -380,6 +380,8 @@ void loop() {
 		if(ballastSetpoint == ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
 		}
+
+    /*
 		else if(ballastSetpoint < ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, 325);
 			digitalWrite(BALLAST_SENSE, LOW);
@@ -388,12 +390,13 @@ void loop() {
 			pwm.setPWM(BALLAST_ESC, 0, 375);
 			digitalWrite(BALLAST_SENSE, HIGH);
 		}
-		
+		*/
 		//Now the spool. Setpoint increases as tether is unspooled:
 		if(spoolSetpoint == spoolPositionCurrent){
 			pwm.setPWM(SPOOL_SERVO, 0, SPOOL_CENTER);
 			pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_CENTER);
 		}
+    /*
 		//Spooling out
 		else if(spoolSetpoint > spoolPositionCurrent){
 			digitalWrite(SPOOL_SENSE, HIGH);
@@ -406,6 +409,8 @@ void loop() {
 			pwm.setPWM(SPOOL_SERVO, 0, 389);
 			setCarriage(-1);
 		}
+
+   */
 		updateControlCounter = 0;
 	}
 	
