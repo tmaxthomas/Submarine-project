@@ -228,7 +228,9 @@ void setup() {
 	
     //Radio/mini-sub Serial Initiation
 	Serial1.begin(BAUD_RATE);    
-	
+
+  Serial.begin(BAUD_RATE);
+  
 	//Initialize the PWM Driver Board
 	pwm.begin();
 	pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
@@ -259,11 +261,15 @@ void loop() {
     if(Serial1.available() == STATION_PACKET_SIZE){
 		
 		//Read the serial data
-		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
+		for(int i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial1.read();
+			Serial.print(currentStationData[i]);
+			Serial.print(" ");
 		}
-		
-		if(currentStationData[9] == 10){
+    
+    Serial.println("");
+    
+		if(currentStationData[8] == 10){
 			
 			/*
 			Assign to relevant variables with unit conversion
@@ -271,32 +277,32 @@ void loop() {
 			local setpoints are all in pwm duty cycle, except spool and ballast setpoints
 			which are given as direct encoder counts
 			*/
-			driveDelta = currentStationData[0];
+			driveDelta = currentStationData[9];
 			driveSetpoint = DRIVE_CENTER + driveDelta;
 		
-			rudderDelta = currentStationData[1];
+			rudderDelta = currentStationData[0];
 			rudderSetpoint = RUDDER_CENTER + rudderDelta;
 		
-			aftDiveDelta = currentStationData[2];
+			aftDiveDelta = currentStationData[1];
 			aftDiveSetpoint = AFT_DIVE_CENTER + aftDiveDelta;
 		
-			foreDiveDelta = currentStationData[3];
+			foreDiveDelta = currentStationData[2];
 			foreDiveSetpoint = FORE_DIVE_CENTER + foreDiveDelta;
 		
-			headLightSetpoint = currentStationData[4] * 41;
+			headLightSetpoint = currentStationData[3] * 41;
 			if(headLightSetpoint > 4095){
 				headLightSetpoint = 4095;
 			}
 		
 			spoolSetpoint = 0;
-			spoolSetpoint = (uint16_t)currentStationData[5];
+			spoolSetpoint = (uint16_t)currentStationData[4];
 			spoolSetpoint = spoolSetpoint << 8;
-			spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[6]); 
+			spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[5]); 
 		
 			ballastSetpoint = 0;
-			ballastSetpoint = (uint16_t)currentStationData[7];
+			ballastSetpoint = (uint16_t)currentStationData[6];
 			ballastSetpoint = ballastSetpoint << 8;
-			ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[8]);
+			ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[7]);
 		
 		
 			/*

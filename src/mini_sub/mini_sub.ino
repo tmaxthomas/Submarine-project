@@ -91,10 +91,9 @@ void setup(){
 
 void loop(){
 	//Enter if data received from sub
-	if(Serial.available()>0){
-		//wait a few ms for packet to finish transmitting (might be unnessary)
-		delay(3);
-		for(uint8_t i = 0; i < SUB_PACKET_SIZE; i++){
+	if(Serial.available() == SUB_PACKET_SIZE){
+		
+		for(int i = 0; i < SUB_PACKET_SIZE; i++){
 			currentSubData[i] = Serial.read();
 		}
 		rudderPositionCurrent = currentSubData[0];
@@ -115,11 +114,12 @@ void loop(){
 		
 		//At this point, the 'current' vars contain the latest values
 	}
+  else if(Serial.available() > SUB_PACKET_SIZE){
+     while(Serial.read() != -1){}
+  }
 	
 	//Enter if data received from base station
 	if(_radio.hasData()){
-		//wait a few ms for packet to finish transmitting (might be unnessary)
-		delay(3);
 		
 		StationPacket stationData;
 		_radio.readData(&stationData);
@@ -154,19 +154,3 @@ void loop(){
 	
 	delayMicroseconds(200);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

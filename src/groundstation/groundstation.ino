@@ -85,9 +85,8 @@ void setup(){
 
 void loop(){
 	//Enter if data received from computer over serial
-	if(Serial.available()>0){
-		//wait a few ms for packet to finish transmitting (might be unnessary)
-		delay(3);
+	if(Serial.available() == STATION_PACKET_SIZE){
+		
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial.read();
 		}
@@ -107,11 +106,12 @@ void loop(){
 		_radio.send(DESTINATION_RADIO_ID, &stationData, sizeof(stationData));
 		
 	}
+  else if(Serial.available() > SUB_PACKET_SIZE){
+     while(Serial.read() != -1){}
+  }
 	
 	//Enter if data received from base station
 	if(_radio.hasAckData()){
-		//wait a few ms for packet to finish transmitting (might be unnessary)
-		delay(3);
 		
 		SubPacket subData;
 		_radio.readData(&subData);
