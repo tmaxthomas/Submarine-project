@@ -269,7 +269,7 @@ void loop() {
     
     Serial.println("");
     
-		if(currentStationData[8] == 10){
+		if(currentStationData[9] == 10){
 			
 			/*
 			Assign to relevant variables with unit conversion
@@ -277,32 +277,32 @@ void loop() {
 			local setpoints are all in pwm duty cycle, except spool and ballast setpoints
 			which are given as direct encoder counts
 			*/
-			driveDelta = currentStationData[9];
+			driveDelta = currentStationData[0];
 			driveSetpoint = DRIVE_CENTER + driveDelta;
 		
-			rudderDelta = currentStationData[0];
+			rudderDelta = currentStationData[1];
 			rudderSetpoint = RUDDER_CENTER + rudderDelta;
 		
-			aftDiveDelta = currentStationData[1];
+			aftDiveDelta = currentStationData[2];
 			aftDiveSetpoint = AFT_DIVE_CENTER + aftDiveDelta;
 		
-			foreDiveDelta = currentStationData[2];
+			foreDiveDelta = currentStationData[3];
 			foreDiveSetpoint = FORE_DIVE_CENTER + foreDiveDelta;
 		
-			headLightSetpoint = currentStationData[3] * 41;
+			headLightSetpoint = currentStationData[4] * 41;
 			if(headLightSetpoint > 4095){
 				headLightSetpoint = 4095;
 			}
 		
 			spoolSetpoint = 0;
-			spoolSetpoint = (uint16_t)currentStationData[4];
+			spoolSetpoint = (uint16_t)currentStationData[5];
 			spoolSetpoint = spoolSetpoint << 8;
-			spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[5]); 
+			spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[6]); 
 		
 			ballastSetpoint = 0;
-			ballastSetpoint = (uint16_t)currentStationData[6];
+			ballastSetpoint = (uint16_t)currentStationData[7];
 			ballastSetpoint = ballastSetpoint << 8;
-			ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[7]);
+			ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[8]);
 		
 		
 			/*
