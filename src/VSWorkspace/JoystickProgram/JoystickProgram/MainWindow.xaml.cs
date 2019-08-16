@@ -209,7 +209,7 @@ namespace JoystickProgram{
                     }
 
                     //Serial Data Transmit
-                    if (serialTransmitCounter == 20){
+                    if (serialTransmitCounter == 5){
                         Byte[] stationPacket = new byte[10];
 
                         stationPacket[0] = (Byte)driveSetpoint;
