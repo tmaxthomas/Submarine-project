@@ -45,7 +45,6 @@
         <Slider x:Name="SpoolFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,390,0,0" VerticalAlignment="Top" Width="145" Maximum="700" IsEnabled="False"/>
         <Label x:Name="NoJoystickFoundText" Content="NO JOYSTICK FOUND" Grid.Column="1" HorizontalAlignment="Left" Margin="810,10,0,520" Width="156" FontSize="14" IsEnabled="False" FontWeight="Bold"/>
         <ComboBox x:Name="SerialComboBox" Grid.Column="1" HorizontalAlignment="Left" Height="24" Margin="384,20,0,0" VerticalAlignment="Top" Width="91" Grid.Row="1"/>
-        <TextBox x:Name="TextBox1" Grid.Column="1" HorizontalAlignment="Left" Height="208" Margin="529,131,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="105"/>
 
     </Grid>
 </Window>

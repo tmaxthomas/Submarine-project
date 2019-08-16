@@ -89,7 +89,7 @@ const uint8_t FORE_DIVE_FEEDBACK = 		12;
 const uint8_t BATTERY_VOLTAGE_SENSE = 	15;
 
 //Other
-const uint8_t EMAG = 			47;
+const uint8_t EMAG = 					47;
 const uint8_t BATTERY_VOLTAGE_TRIGGER = 52;
 
 /******************

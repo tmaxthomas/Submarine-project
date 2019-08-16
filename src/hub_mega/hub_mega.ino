@@ -89,8 +89,8 @@ const uint8_t FORE_DIVE_FEEDBACK = 		12;
 const uint8_t BATTERY_VOLTAGE_SENSE = 	15;
 
 //Other
-const uint8_t EMAG = 			47;
-
+const uint8_t EMAG = 					47;
+const uint8_t BATTERY_VOLTAGE_TRIGGER = 52;
 /******************
  * MACROS/DEFINES *
  *****************/
@@ -149,12 +149,12 @@ const uint16_t STATUS_MAX = 		4095;
 /******************
 * FEEDBACK LIMITS *
 ******************/
-const uint16_t WATER_SENSE_CENTER =				0;
-const uint16_t MOTOR_TEMP_SENSE_CENTER = 		0;
-const uint16_t RUDDER_FEEDBACK_CENTER = 		0;
-const uint16_t AFT_DIVE_FEEDBACK_CENTER = 		0;
-const uint16_t FORE_DIVE_FEEDBACK_CENTER = 		0;
-const uint16_t BATTERY_VOLTAGE_SENSE_CENTER = 	0;
+const uint16_t WATER_SENSE_CENTER =				220;
+const uint16_t MOTOR_TEMP_SENSE_CENTER = 		35;
+const uint16_t RUDDER_FEEDBACK_CENTER = 		96;
+const uint16_t AFT_DIVE_FEEDBACK_CENTER = 		9;
+const uint16_t FORE_DIVE_FEEDBACK_CENTER = 		14;
+const uint16_t BATTERY_VOLTAGE_SENSE_CENTER = 	125;
 
 /***************************
 * SEND/RECEIVE PACKET DATA *
@@ -228,8 +228,6 @@ void setup() {
 	
     //Radio/mini-sub Serial Initiation
 	Serial1.begin(BAUD_RATE);    
-
-  Serial.begin(BAUD_RATE);
   
 	//Initialize the PWM Driver Board
 	pwm.begin();
@@ -243,6 +241,7 @@ void setup() {
 	pinMode(BALLAST_SENSE, OUTPUT);
 	
 	pinMode(EMAG, OUTPUT);
+	pinMode(BATTERY_VOLTAGE_TRIGGER, OUTPUT);
 	
 	pinMode(CARRIAGE_MSB, INPUT);
 	pinMode(CARRIAGE_LSB, INPUT);
@@ -263,11 +262,7 @@ void loop() {
 		//Read the serial data
 		for(int i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial1.read();
-			Serial.print(currentStationData[i]);
-			Serial.print(" ");
 		}
-    
-    Serial.println("");
     
 		if(currentStationData[9] == 10){
 			

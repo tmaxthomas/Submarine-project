@@ -61,8 +61,6 @@ namespace JoystickProgram{
         Byte waterSense = 0;
         Byte batteryVoltage = 0;
 
-        String myString = "";
-
         public MainWindow(){
             InitializeComponent();
             
@@ -106,10 +104,8 @@ namespace JoystickProgram{
             RudderAngleSlider.Value = rudderSetpoint * -1;
             BallastSetpointSlider.Value = ballastSetpoint;
             SpoolSetpointSlider.Value = spoolSetpoint;
-            HeadlightsCheckbox.IsChecked = headlightSwitch;
+            HeadlightsCheckbox.IsChecked = !headlightSwitch;
 
-            myString = rudderPosition.ToString() + " " + aftDivePosition.ToString() + " " + foreDivePosition.ToString() + " " + spoolPosition.ToString() + " " + ballastPosition.ToString() + " ";
-            TextBox1.Text = myString;
         }
 
         public void runningThread(){
@@ -256,9 +252,6 @@ namespace JoystickProgram{
                             waterSense = subPacket[8];
                             batteryVoltage = subPacket[9];
                             //need subPacketCHeck implementation
-
-
-                           // updateFrame();
 
                         }
                         else if((SerialPort1.BytesToRead % 11) == 0) {
