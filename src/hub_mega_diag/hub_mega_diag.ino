@@ -244,7 +244,7 @@ void setup() {
 	pinMode(BALLAST_SENSE, OUTPUT);
 	
 	pinMode(EMAG, OUTPUT);
-  pinMode(BATTERY_VOLTAGE_TRIGGER, OUTPUT);
+	pinMode(BATTERY_VOLTAGE_TRIGGER, OUTPUT);
 	
 	pinMode(CARRIAGE_MSB, INPUT);
 	pinMode(CARRIAGE_LSB, INPUT);
@@ -440,8 +440,12 @@ void loop() {
 		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
 		waterSenseCurrent = analogRead(WATER_SENSE) - WATER_SENSE_CENTER;
 		batteryVoltage = analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER;
-    digitalWrite(BATTERY_VOLTAGE_TRIGGER, LOW);
+		
+		rudderPositionCurrent *= -1;
+		
+		digitalWrite(BATTERY_VOLTAGE_TRIGGER, LOW);
     
+		/*
 		Serial.print("Rudder Position: ");
 		Serial.println(rudderPositionCurrent);
 		Serial.print("aft dive position: ");
@@ -456,7 +460,7 @@ void loop() {
 		Serial.println(batteryVoltage);
 		Serial.println("");
 		
-		
+		*/
 		updateSensorsCounter = 0;
 	}
 	

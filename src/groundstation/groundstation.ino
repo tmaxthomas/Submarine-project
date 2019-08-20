@@ -75,12 +75,14 @@ Written over the serial bus once received
 const uint8_t STATION_PACKET_SIZE = 10;
 byte currentStationData[STATION_PACKET_SIZE];
 
+bool isValidPacket = false;
 
 void setup(){
 	//init serial
     Serial.begin(9600);
 	//init radio
     _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN);
+	
 }
 
 void loop(){
@@ -89,26 +91,34 @@ void loop(){
 		
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial.read();
+			if(currentStationData[i] == ((uint8_t)10) && i == (uint8_t)9){
+				isValidPacket = true;
+			}
+		}
+		if(isValidPacket){
+			StationPacket stationData;
+			stationData.driveSetpoint = currentStationData[0];
+			stationData.rudderSetpoint = currentStationData[1];
+			stationData.aftDiveSetpoint = currentStationData[2];
+			stationData.foreDiveSetpoint = currentStationData[3];
+			stationData.headLightSetpoint = currentStationData[4];
+			stationData.spoolSetpoint = ((uint16_t)currentStationData[5]) << 8;
+			stationData.spoolSetpoint = stationData.spoolSetpoint | ((uint16_t)currentStationData[6]);
+			stationData.ballastSetpoint = ((uint16_t)currentStationData[7]) << 8;
+			stationData.ballastSetpoint = stationData.ballastSetpoint | ((uint16_t)currentStationData[8]);
+			stationData.stationPacketCheck = currentStationData[9];
+		
+			_radio.send(DESTINATION_RADIO_ID, &stationData, sizeof(stationData));
+		}
+		else{
+			while(Serial.read() != -1){}
 		}
 		
-		StationPacket stationData;
-		stationData.driveSetpoint = currentStationData[0];
-		stationData.rudderSetpoint = currentStationData[1];
-		stationData.aftDiveSetpoint = currentStationData[2];
-		stationData.foreDiveSetpoint = currentStationData[3];
-		stationData.headLightSetpoint = currentStationData[4];
-		stationData.spoolSetpoint = ((uint16_t)currentStationData[5]) << 8;
-		stationData.spoolSetpoint = stationData.spoolSetpoint | ((uint16_t)currentStationData[6]);
-		stationData.ballastSetpoint = ((uint16_t)currentStationData[7]) << 8;
-		stationData.ballastSetpoint = stationData.ballastSetpoint | ((uint16_t)currentStationData[8]);
-		stationData.stationPacketCheck = currentStationData[9];
-		
-		_radio.send(DESTINATION_RADIO_ID, &stationData, sizeof(stationData));
-		
+		isValidPacket = false;
 	}
-  else if(Serial.available() > SUB_PACKET_SIZE){
-     while(Serial.read() != -1){}
-  }
+	else if(Serial.available() > STATION_PACKET_SIZE){
+		while(Serial.read() != -1){}
+	}
 	
 	//Enter if data received from base station
 	if(_radio.hasAckData()){

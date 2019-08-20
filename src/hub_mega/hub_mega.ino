@@ -425,7 +425,7 @@ void loop() {
 	2. Updates SubPacket 'Current' vars with data.
 	*/
 	if(updateSensorsCounter > SENSORS_UPDATE_COUNT){
-		
+		digitalWrite(BATTERY_VOLTAGE_TRIGGER, HIGH);
 		//TODO: assign offsets properly
 		rudderPositionCurrent = analogRead(RUDDER_FEEDBACK) - RUDDER_FEEDBACK_CENTER;
 		aftDivePositionCurrent = analogRead(AFT_DIVE_FEEDBACK) - AFT_DIVE_FEEDBACK_CENTER;
@@ -434,7 +434,9 @@ void loop() {
 		waterSenseCurrent = analogRead(WATER_SENSE) - WATER_SENSE_CENTER;
 		batteryVoltage = analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER;
 		
-		updateSensorsCounter = 0;
+		rudderPositionCurrent *= -1;
+		
+		digitalWrite(BATTERY_VOLTAGE_TRIGGER, LOW);
 	}
 	
 	//update the counters:
