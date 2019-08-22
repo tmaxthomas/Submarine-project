@@ -76,6 +76,7 @@ const uint8_t STATION_PACKET_SIZE = 10;
 byte currentStationData[STATION_PACKET_SIZE];
 
 bool isValidPacket = false;
+int availablePackets = 0;
 
 void setup(){
 	//init serial
@@ -86,12 +87,23 @@ void setup(){
 }
 
 void loop(){
+	
+	if(!isValidPacket){
+		while(Serial.available() != 0){
+			Serial.read();
+			delayMicroseconds(300);
+		}
+		isValidPacket = true;
+	}
+	
 	//Enter if data received from computer over serial
 	if(Serial.available() == STATION_PACKET_SIZE){
 		
+		isValidPacket = false;
+		
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial.read();
-			if(currentStationData[i] == ((uint8_t)10) && i == (uint8_t)9){
+			if(currentStationData[i] == ((uint8_t)10) && i == (STATION_PACKET_SIZE-1)){
 				isValidPacket = true;
 			}
 		}
@@ -111,13 +123,16 @@ void loop(){
 			_radio.send(DESTINATION_RADIO_ID, &stationData, sizeof(stationData));
 		}
 		else{
-			while(Serial.read() != -1){}
+			while(Serial.available() != 0){
+				Serial.read();
+			}
 		}
 		
-		isValidPacket = false;
 	}
 	else if(Serial.available() > STATION_PACKET_SIZE){
-		while(Serial.read() != -1){}
+		while(Serial.available() != 0){
+			Serial.read();
+		}
 	}
 	
 	//Enter if data received from base station
