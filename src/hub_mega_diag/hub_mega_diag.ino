@@ -155,7 +155,7 @@ const uint16_t MOTOR_TEMP_SENSE_CENTER = 		35;
 const uint16_t RUDDER_FEEDBACK_CENTER = 		96;
 const uint16_t AFT_DIVE_FEEDBACK_CENTER = 		9;
 const uint16_t FORE_DIVE_FEEDBACK_CENTER = 		14;
-const uint16_t BATTERY_VOLTAGE_SENSE_CENTER = 	125;
+const uint16_t BATTERY_VOLTAGE_SENSE_CENTER = 	331;
 
 /***************************
 * SEND/RECEIVE PACKET DATA *
@@ -439,7 +439,7 @@ void loop() {
 		foreDivePositionCurrent = analogRead(FORE_DIVE_FEEDBACK) - FORE_DIVE_FEEDBACK_CENTER;
 		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
 		waterSenseCurrent = analogRead(WATER_SENSE) - WATER_SENSE_CENTER;
-		batteryVoltage = analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER;
+		batteryVoltage = (uint8_t)(analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER);
 		
 		rudderPositionCurrent *= -1;
 		
