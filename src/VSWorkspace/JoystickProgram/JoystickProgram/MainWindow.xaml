@@ -36,12 +36,12 @@
         <Label x:Name="WaterSensorLabel" Content="Water Sensor" Grid.Column="1" HorizontalAlignment="Left" Height="40" Margin="55,280,0,0" VerticalAlignment="Top" Width="88"/>
         <Label x:Name="MotorTempLabel" Content="Motor Temp" Grid.Column="1" HorizontalAlignment="Left" Height="30" Margin="275,360,0,0" VerticalAlignment="Top" Width="77"/>
         <Slider x:Name="AftDiveSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,136,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
-        <Slider x:Name="BatteryVoltageSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,241,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False"/>
+        <Slider x:Name="BatteryVoltageSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,241,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="125"/>
         <Slider x:Name="BallastFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,310,0,0" VerticalAlignment="Top" Width="145" Maximum="365" IsEnabled="False"/>
-        <Slider x:Name="MotorTempSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,390,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="255"/>
+        <Slider x:Name="MotorTempSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="249,390,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="100"/>
         <Slider x:Name="ForeDiveSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,136,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
         <Slider x:Name="RudderFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,236,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
-        <Slider x:Name="WaterSensorSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,310,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False"/>
+        <Slider x:Name="WaterSensorSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,310,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="100"/>
         <Slider x:Name="SpoolFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="41,390,0,0" VerticalAlignment="Top" Width="145" Maximum="700" IsEnabled="False"/>
         <Label x:Name="NoJoystickFoundText" Content="NO JOYSTICK FOUND" Grid.Column="1" HorizontalAlignment="Left" Margin="810,10,0,520" Width="156" FontSize="14" IsEnabled="False" FontWeight="Bold"/>
         <ComboBox x:Name="SerialComboBox" Grid.Column="1" HorizontalAlignment="Left" Height="24" Margin="384,20,0,0" VerticalAlignment="Top" Width="91" Grid.Row="1"/>

@@ -90,7 +90,7 @@ const uint8_t BATTERY_VOLTAGE_SENSE = 	15;
 
 //Other
 const uint8_t EMAG = 					47;
-const uint8_t BATTERY_VOLTAGE_TRIGGER = 52;
+const uint8_t MOTOR_TEMP_TRIGGER = 		52;
 
 /******************
  * MACROS/DEFINES *
@@ -150,8 +150,7 @@ const uint16_t STATUS_MAX = 		4095;
 /******************
 * FEEDBACK LIMITS *
 ******************/
-const uint16_t WATER_SENSE_CENTER =				220;
-const uint16_t MOTOR_TEMP_SENSE_CENTER = 		35;
+const uint16_t MOTOR_TEMP_SENSE_CENTER = 		565;
 const uint16_t RUDDER_FEEDBACK_CENTER = 		96;
 const uint16_t AFT_DIVE_FEEDBACK_CENTER = 		9;
 const uint16_t FORE_DIVE_FEEDBACK_CENTER = 		14;
@@ -432,18 +431,26 @@ void loop() {
 	2. Updates SubPacket 'Current' vars with data.
 	*/
 	if(updateSensorsCounter > SENSORS_UPDATE_COUNT){
-		digitalWrite(BATTERY_VOLTAGE_TRIGGER, HIGH);
+		digitalWrite(MOTOR_TEMP_TRIGGER, HIGH);
 		//TODO: assign offsets properly
 		rudderPositionCurrent = analogRead(RUDDER_FEEDBACK) - RUDDER_FEEDBACK_CENTER;
 		aftDivePositionCurrent = analogRead(AFT_DIVE_FEEDBACK) - AFT_DIVE_FEEDBACK_CENTER;
 		foreDivePositionCurrent = analogRead(FORE_DIVE_FEEDBACK) - FORE_DIVE_FEEDBACK_CENTER;
 		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
-		waterSenseCurrent = analogRead(WATER_SENSE) - WATER_SENSE_CENTER;
+		motorTempCurrent *= -1;
+		
+		if(analogRead(WATER_SENSE) < 800){
+			waterSenseCurrent = 100;
+		}
+		else{
+			waterSenseCurrent = 0;
+		}
+		
 		batteryVoltage = (uint8_t)(analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER);
 		
 		rudderPositionCurrent *= -1;
 		
-		digitalWrite(BATTERY_VOLTAGE_TRIGGER, LOW);
+		digitalWrite(MOTOR_TEMP_TRIGGER, LOW);
     
 		/*
 		Serial.print("Rudder Position: ");
