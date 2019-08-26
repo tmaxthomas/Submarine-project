@@ -392,7 +392,7 @@ void loop() {
 			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
 		}
 
-    /*
+    
 		else if(ballastSetpoint < ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, 325);
 			digitalWrite(BALLAST_SENSE, LOW);
@@ -401,7 +401,7 @@ void loop() {
 			pwm.setPWM(BALLAST_ESC, 0, 375);
 			digitalWrite(BALLAST_SENSE, HIGH);
 		}
-		*/
+		
 		//Now the spool. Setpoint increases as tether is unspooled:
 		if(spoolSetpoint == spoolPositionCurrent){
 			pwm.setPWM(SPOOL_SERVO, 0, SPOOL_CENTER);
