@@ -328,6 +328,27 @@ void loop() {
 		
 			isUpdated = true;
 		}
+		else if(currentStationData[9] = 30){
+			pwm.setPWM(DRIVE_ESC, 0, DRIVE_CENTER);
+			pwm.setPWM(AFT_DIVE_SERVO, 0, AFT_DIVE_CENTER);
+			pwm.setPWM(FORE_DIVE_SERVO, 0, FORE_DIVE_CENTER);
+			pwm.setPWM(RUDDER_SERVO, 0, RUDDER_CENTER);
+			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
+			pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_CENTER);
+			pwm.setPWM(SPOOL_SERVO, 0, SPOOL_CENTER);
+			while(true){
+				for(int i = 0; i < 4095; i++){
+					pwm.setPWM(STATUS_LED, 0, i);
+					pwm.setPWM(HEADLIGHTS, 0, i);
+					delayMicroseconds(100);
+				}
+				for(int i = 4095; i > 0; i--){
+					pwm.setPWM(STATUS_LED, 0, i);
+					pwm.setPWM(HEADLIGHTS, 0, i);
+					delayMicroseconds(100);
+				}	
+			}
+		}
 	}
 	else if(Serial1.available() > STATION_PACKET_SIZE){
 		while(Serial1.read() != -1){};

@@ -39,6 +39,7 @@ namespace JoystickProgram{
 
         // Setpoint Data variables
         bool headlightSwitch = true;
+		bool isEStop = false;
 
         SByte driveSetpoint = 0;
         SByte rudderSetpoint = 0;
@@ -105,6 +106,10 @@ namespace JoystickProgram{
             BallastSetpointSlider.Value = ballastSetpoint;
             SpoolSetpointSlider.Value = spoolSetpoint;
             HeadlightsCheckbox.IsChecked = !headlightSwitch;
+
+			if (isEStop){
+				EStopLabel.Visibility = Visibility.Visible;
+			}
 
         }
 
@@ -202,6 +207,10 @@ namespace JoystickProgram{
                             }
                         }
 
+						else if (state.RawOffset == 49){
+							isEStop = true;
+						}
+
                     }
 
                     //Serial Data Transmit
@@ -217,7 +226,12 @@ namespace JoystickProgram{
                         stationPacket[6] = (Byte)(spoolSetpoint);
                         stationPacket[7] = (Byte)(ballastSetpoint >> 8);
                         stationPacket[8] = (Byte)(ballastSetpoint);
-                        stationPacket[9] = (Byte)10;
+						if (isEStop){
+							stationPacket[9] = (Byte)30;
+						}
+						else{
+							stationPacket[9] = (Byte)10;
+						}
 
                         SerialPort1.Write(stationPacket, 0, stationPacket.Length);
                         serialTransmitCounter = 0;

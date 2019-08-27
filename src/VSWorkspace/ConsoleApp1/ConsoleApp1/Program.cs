@@ -58,7 +58,7 @@ namespace ConsoleApp1
                 joystick.Poll();
                 var datas = joystick.GetBufferedData();
                 foreach (var state in datas)
-                    Console.WriteLine(state);
+					Console.WriteLine(state.RawOffset);
             }
 
         }
