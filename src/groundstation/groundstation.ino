@@ -103,7 +103,7 @@ void loop(){
 		
 		for(uint8_t i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial.read();
-			if(currentStationData[i] == ((uint8_t)10) && i == (STATION_PACKET_SIZE-1)){
+			if(((currentStationData[i] == ((uint8_t)10)) || (currentStationData[i] == ((uint8_t)30))) && i == (STATION_PACKET_SIZE-1)){
 				isValidPacket = true;
 			}
 		}

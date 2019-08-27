@@ -243,7 +243,7 @@ void setup() {
 	pinMode(BALLAST_SENSE, OUTPUT);
 	
 	pinMode(EMAG, OUTPUT);
-	pinMode(BATTERY_VOLTAGE_TRIGGER, OUTPUT);
+	pinMode(MOTOR_TEMP_TRIGGER, OUTPUT);
 	
 	pinMode(CARRIAGE_MSB, INPUT);
 	pinMode(CARRIAGE_LSB, INPUT);
@@ -328,7 +328,7 @@ void loop() {
 		
 			isUpdated = true;
 		}
-		else if(currentStationData[9] = 30){
+		else if(currentStationData[9] == 30){
 			pwm.setPWM(DRIVE_ESC, 0, DRIVE_CENTER);
 			pwm.setPWM(AFT_DIVE_SERVO, 0, AFT_DIVE_CENTER);
 			pwm.setPWM(FORE_DIVE_SERVO, 0, FORE_DIVE_CENTER);
