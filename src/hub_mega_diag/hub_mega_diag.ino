@@ -205,6 +205,7 @@ const uint16_t CARRIAGE_SOFT_LIMIT = 	155;
 * GLOBALS *
 **********/
 bool isUpdated =					false;
+bool isBallastSetpointLocked = 		false;
 uint8_t updateSpoolBallastCounter = 0;
 uint8_t emagCounter = 				0;
 uint8_t updateSensorsCounter = 		0;
@@ -299,12 +300,17 @@ void loop() {
 			spoolSetpoint = (uint16_t)currentStationData[5];
 			spoolSetpoint = spoolSetpoint << 8;
 			spoolSetpoint = spoolSetpoint | ((uint16_t)currentStationData[6]); 
-		
+			
+			uint16_t ballastSetpointPrev = ballastSetpoint;
+			
 			ballastSetpoint = 0;
 			ballastSetpoint = (uint16_t)currentStationData[7];
 			ballastSetpoint = ballastSetpoint << 8;
 			ballastSetpoint = ballastSetpoint | ((uint16_t)currentStationData[8]);
-		
+			
+			if(ballastSetpointPrev != ballastSetpoint){
+				isBallastSetpointLocked = false;
+			}
 		
 			/*
 			Now construct the return serial packet and write it
@@ -327,6 +333,7 @@ void loop() {
 			Serial1.write(currentSubData, SUB_PACKET_SIZE);
 		
 			isUpdated = true;
+			
 		}
 		else if(currentStationData[9] == 30){
 			pwm.setPWM(DRIVE_ESC, 0, DRIVE_CENTER);
@@ -340,12 +347,12 @@ void loop() {
 				for(int i = 0; i < 4095; i++){
 					pwm.setPWM(STATUS_LED, 0, i);
 					pwm.setPWM(HEADLIGHTS, 0, i);
-					delayMicroseconds(100);
+					delayMicroseconds(50);
 				}
 				for(int i = 4095; i > 0; i--){
 					pwm.setPWM(STATUS_LED, 0, i);
 					pwm.setPWM(HEADLIGHTS, 0, i);
-					delayMicroseconds(100);
+					delayMicroseconds(50);
 				}	
 			}
 		}
@@ -386,7 +393,11 @@ void loop() {
 	if(updateSpoolBallastCounter > SPOOL_BALLAST_UPDATE_COUNT){
 		
 		spoolPositionCurrent += updateEncoder(SPOOL_MSB, SPOOL_LSB, spoolBusLastState);
-		ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
+		
+		if(!isBallastSetpointLocked){
+			ballastPositionCurrent += updateEncoder(BALLAST_MSB, BALLAST_LSB, ballastBusLastState);
+		}
+		
 		carriagePositionCurrent += updateEncoder(CARRIAGE_MSB, CARRIAGE_LSB, carriageBusLastState);
 		
 		if(spoolPositionCurrent > 1000){
@@ -410,6 +421,7 @@ void loop() {
 		//Ballast control algorithm. setpoint increases as water is drawn in:
 		if(ballastSetpoint == ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, BALLAST_CENTER);
+			isBallastSetpointLocked = true;
 		}
 
     
