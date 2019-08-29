@@ -29,6 +29,7 @@ const static uint8_t DESTINATION_RADIO_ID = 0;
 const static uint8_t PIN_RADIO_CE = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
 
+const uint8_t LED_PIN = 2;
 
 //StationPacket - packet received from Base Station
 struct StationPacket{
@@ -84,6 +85,8 @@ void setup(){
 	//init radio
     _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN);
 	
+	pinMode(LED_PIN, OUTPUT);
+	digitalWrite(LED_PIN, LOW);
 }
 
 void loop(){
@@ -121,11 +124,13 @@ void loop(){
 			stationData.stationPacketCheck = currentStationData[9];
 		
 			_radio.send(DESTINATION_RADIO_ID, &stationData, sizeof(stationData));
+			digitalWrite(LED_PIN, HIGH);
 		}
 		else{
 			while(Serial.available() != 0){
 				Serial.read();
 			}
+			digitalWrite(LED_PIN, LOW);
 		}
 		
 	}
