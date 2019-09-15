@@ -46,6 +46,7 @@
         <Label x:Name="NoJoystickFoundText" Content="NO JOYSTICK FOUND" Grid.Column="1" HorizontalAlignment="Left" Margin="810,10,0,520" Width="156" FontSize="14" IsEnabled="False" FontWeight="Bold"/>
         <ComboBox x:Name="SerialComboBox" Grid.Column="1" HorizontalAlignment="Left" Height="24" Margin="384,20,0,0" VerticalAlignment="Top" Width="91" Grid.Row="1"/>
         <Label x:Name="EStopLabel" Content="ESTOP" Grid.Column="1" HorizontalAlignment="Left" Height="55" Margin="480,81,0,0" VerticalAlignment="Top" Width="101" FontSize="30" FontWeight="Bold" Background="#FFF10404" Visibility="Hidden"/>
+        <TextBox x:Name="TextyBox" Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="503,260,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="162"/>
 
     </Grid>
 </Window>

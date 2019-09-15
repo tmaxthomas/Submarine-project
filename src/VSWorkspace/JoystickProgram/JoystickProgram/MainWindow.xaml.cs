@@ -62,7 +62,9 @@ namespace JoystickProgram{
         Byte waterSense = 0;
         Byte batteryVoltage = 0;
 
-        public MainWindow(){
+		Byte[] tempData = new byte[50];
+
+		public MainWindow(){
             InitializeComponent();
             
             String[] ports = SerialPort.GetPortNames();
@@ -106,6 +108,12 @@ namespace JoystickProgram{
             BallastSetpointSlider.Value = ballastSetpoint;
             SpoolSetpointSlider.Value = spoolSetpoint;
             HeadlightsCheckbox.IsChecked = !headlightSwitch;
+
+			TextyBox.Text = "";
+			for(int i = 0; i < tempData.Length; i++)
+			{
+				TextyBox.Text += tempData[i];
+			}
 
 			if (isEStop){
 				EStopLabel.Visibility = Visibility.Visible;
@@ -245,6 +253,10 @@ namespace JoystickProgram{
                     
                     if (serialReceiveDelayCounter == 2){
 
+
+
+						/*
+
                         if (SerialPort1.BytesToRead == 11){
 
                             Byte[] subPacket = new byte[11];
@@ -300,7 +312,10 @@ namespace JoystickProgram{
 
                          
                         serialReceiveDelayCounter = 0;
+
+						*/
                     }
+					
                     
                 }
 
