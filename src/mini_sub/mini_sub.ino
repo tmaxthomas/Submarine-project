@@ -114,9 +114,9 @@ void loop(){
 		
 		//At this point, the 'current' vars contain the latest values
 	}
-  else if(Serial.available() > SUB_PACKET_SIZE){
-     while(Serial.read() != -1){}
-  }
+	else if(Serial.available() > SUB_PACKET_SIZE){
+		while(Serial.read() != -1){}
+	}
 	
 	//Enter if data received from base station
 	if(_radio.hasData()){
