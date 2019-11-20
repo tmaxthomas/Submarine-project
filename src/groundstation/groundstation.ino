@@ -156,7 +156,7 @@ void loop(){
 		currentSubData[7] = subData.motorTemp;
 		currentSubData[8] = subData.waterSense;
 		currentSubData[9] = subData.batteryVoltage;
-		currentSubData[10] = subData.subPacketCheck;
+		currentSubData[10] = 20;//subData.subPacketCheck;
 		
 		Serial.write(currentSubData, SUB_PACKET_SIZE);
 		
