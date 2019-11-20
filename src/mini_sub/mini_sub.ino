@@ -148,6 +148,7 @@ void loop(){
 		subData.motorTemp = motorTempCurrent;
 		subData.waterSense = waterSenseCurrent;
 		subData.batteryVoltage = batteryVoltageCurrent;
+		subData.subPacketCheck = subPacketCheckCurrent;
 		
 		_radio.addAckData(&subData, sizeof(subData));
 	}
