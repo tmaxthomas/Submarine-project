@@ -53,7 +53,7 @@ struct SubPacket{
 	uint8_t motorTemp;
 	uint8_t waterSense;
 	uint8_t batteryVoltage;
-	uint8_t subPacketCheck;
+	//uint8_t subPacketCheck;
 	
 };
 
@@ -64,7 +64,7 @@ Variables holding the latest received operational data from the sub.
 Assigned to and transmitted by ack packets.
 */
 
-const uint8_t SUB_PACKET_SIZE = 	11;
+const uint8_t SUB_PACKET_SIZE = 	10;
 byte currentSubData[SUB_PACKET_SIZE];
 
 
@@ -156,7 +156,7 @@ void loop(){
 		currentSubData[7] = subData.motorTemp;
 		currentSubData[8] = subData.waterSense;
 		currentSubData[9] = subData.batteryVoltage;
-		currentSubData[10] = 20;//subData.subPacketCheck;
+		//currentSubData[10] = 20;//subData.subPacketCheck;
 		
 		Serial.write(currentSubData, SUB_PACKET_SIZE);
 		

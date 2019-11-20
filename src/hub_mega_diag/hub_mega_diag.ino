@@ -106,7 +106,7 @@ const uint16_t THREAD_FREQ = 				500;
 *************/
 //Carriage. PWM below Center sends carriage towards aft. 
 const uint16_t CARRIAGE_MIN = 		330;
-const uint16_t CARRIAGE_CENTER =  	364;
+const uint16_t CARRIAGE_CENTER =  	367;
 const uint16_t CARRIAGE_MAX	=		396;
 
 //Spool. PWM below Center Spools out the tether
@@ -255,6 +255,7 @@ void setup() {
 	
 	//turn on status LED to indicate ready operation
 	pwm.setPWM(STATUS_LED, 0, STATUS_MAX);
+	pwm.setPWM(CARRIAGE_SERVO, 0, CARRIAGE_CENTER);
 }
 
 //Loop Routine
