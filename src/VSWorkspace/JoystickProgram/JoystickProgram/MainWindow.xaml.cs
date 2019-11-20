@@ -248,9 +248,9 @@ namespace JoystickProgram{
                     if (serialReceiveDelayCounter == 2){
 
 
-                        if (SerialPort1.BytesToRead == 11){
+                        if (SerialPort1.BytesToRead == 10){
 
-                            Byte[] subPacket = new byte[11];
+                            Byte[] subPacket = new byte[10];
 
                             for(int i = 0; i < subPacket.Length; i++) {
                                 subPacket[i] = (Byte)SerialPort1.ReadByte();
@@ -271,13 +271,13 @@ namespace JoystickProgram{
                             //need subPacketCHeck implementation
 
                         }
-                        else if((SerialPort1.BytesToRead % 11) == 0) {
-                            int discardBytes = SerialPort1.BytesToRead - 11;
+                        else if((SerialPort1.BytesToRead % 10) == 0) {
+                            int discardBytes = SerialPort1.BytesToRead - 10;
                             for(int i = 0; i < discardBytes; i++) {
                                 SerialPort1.ReadByte();
                             }
 
-                            Byte[] subPacket = new byte[11];
+                            Byte[] subPacket = new byte[10];
 
                             for (int i = 0; i < subPacket.Length; i++) {
                                 subPacket[i] = (Byte)SerialPort1.ReadByte();
