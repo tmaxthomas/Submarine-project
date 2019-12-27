@@ -270,7 +270,7 @@ void loop() {
 			Serial.print(" ");
 		}
     
-    Serial.println("");
+		Serial.println("");
     
 		if(currentStationData[9] == 10){
 			
@@ -348,12 +348,12 @@ void loop() {
 				for(int i = 0; i < 4095; i++){
 					pwm.setPWM(STATUS_LED, 0, i);
 					pwm.setPWM(HEADLIGHTS, 0, i);
-					delayMicroseconds(50);
+					delayMicroseconds(30);
 				}
 				for(int i = 4095; i > 0; i--){
 					pwm.setPWM(STATUS_LED, 0, i);
 					pwm.setPWM(HEADLIGHTS, 0, i);
-					delayMicroseconds(50);
+					delayMicroseconds(30);
 				}	
 			}
 		}
@@ -425,7 +425,6 @@ void loop() {
 			isBallastSetpointLocked = true;
 		}
 
-    
 		else if(ballastSetpoint < ballastPositionCurrent){
 			pwm.setPWM(BALLAST_ESC, 0, 325);
 			digitalWrite(BALLAST_SENSE, LOW);

@@ -108,6 +108,7 @@ namespace JoystickProgram{
             BallastSetpointSlider.Value = ballastSetpoint;
             SpoolSetpointSlider.Value = spoolSetpoint;
             HeadlightsCheckbox.IsChecked = !headlightSwitch;
+			SerialBox.Text = batteryVoltage.ToString();
 
 			if (isEStop){
 				EStopLabel.Visibility = Visibility.Visible;
@@ -153,7 +154,7 @@ namespace JoystickProgram{
             catch{
                 isEnabled = false;
             }
-
+			Thread.Sleep(500);
             while (true){
                 if (isEnabled){
                     joystick.Poll();
@@ -251,11 +252,15 @@ namespace JoystickProgram{
                         if (SerialPort1.BytesToRead == 10){
 
                             Byte[] subPacket = new byte[10];
+							String subPacketString = "";
 
                             for(int i = 0; i < subPacket.Length; i++) {
                                 subPacket[i] = (Byte)SerialPort1.ReadByte();
+								subPacketString += subPacket[i].ToString() + " ";
                             }
 
+							Console.WriteLine(subPacketString);
+							
                             rudderPosition = (SByte)subPacket[0];
                             aftDivePosition = (SByte)subPacket[1];
                             foreDivePosition = (SByte)subPacket[2];
@@ -269,8 +274,9 @@ namespace JoystickProgram{
                             waterSense = subPacket[8];
                             batteryVoltage = subPacket[9];
                             //need subPacketCHeck implementation
-
+							
                         }
+						/*
                         else if((SerialPort1.BytesToRead % 10) == 0) {
                             int discardBytes = SerialPort1.BytesToRead - 10;
                             for(int i = 0; i < discardBytes; i++) {
@@ -297,6 +303,7 @@ namespace JoystickProgram{
                             batteryVoltage = subPacket[9];
 
                         }
+						*/
                         else {
                             SerialPort1.DiscardInBuffer();
                         }

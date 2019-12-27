@@ -78,7 +78,9 @@ byte currentStationData[STATION_PACKET_SIZE];
 
 bool isValidPacket = false;
 int availablePackets = 0;
-
+/*
+bool isPacketInit = false;
+*/
 void setup(){
 	//init serial
     Serial.begin(9600);
@@ -87,6 +89,20 @@ void setup(){
 	
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, LOW);
+	/*
+	//Prototype packet out-of-order fixed
+	while(!isPacketInit){
+		if(Serial.available() > 0 && Serial.available() <= STATION_PACKET_SIZE){
+			while(Serial.read() != 10);
+			
+		}
+		else if(Serial.available() > STATION_PACKET_SIZE){
+			while(Serial.available() != 0){
+				Serial.read();
+			}
+		}
+	}
+	*/
 }
 
 void loop(){
