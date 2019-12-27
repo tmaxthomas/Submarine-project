@@ -111,7 +111,7 @@ const uint16_t CARRIAGE_MAX	=		396;
 
 //Spool. PWM below Center Spools out the tether
 const uint16_t SPOOL_MIN =			340;
-const uint16_t SPOOL_CENTER = 		374;
+const uint16_t SPOOL_CENTER = 		373;
 const uint16_t SPOOL_MAX =			410;
 
 //Rudder Servo. PWM below Center Steers sub to right

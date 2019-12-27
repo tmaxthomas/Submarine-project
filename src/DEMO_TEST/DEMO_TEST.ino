@@ -33,23 +33,23 @@ void setup() {
 	pwm.begin();
 	pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
-	delay(2500);
+	//delay(2500);
   
 	Serial.println("Arming Ballast ESC...");
-	delay(1000);
+	//delay(1000);
 	pwm.setPWM(BALLAST_ESC, 0, 350);
-	delay(2000);
+//	delay(2000);
 	Serial.println("Ballast Armed");
 	delay(300);
 	Serial.println("Arming Drive ESC...");
-	delay(1000);
+	//delay(1000);
 	pwm.setPWM(DRIVE_ESC, 0, 350);
-	delay(2000);
+//	delay(2000);
 	Serial.println("Drive Armed");
-	delay(800);
+//	delay(800);
   
 	Serial.println("Zeroing Planes");
-	delay(500);
+	//delay(500);
 	pwm.setPWM(AFT_DIVE_SERVO, 0, 320);
 	delay(200);
 	pwm.setPWM(FORE_DIVE_SERVO, 0, 390);
@@ -57,8 +57,8 @@ void setup() {
 	pwm.setPWM(RUDDER_SERVO, 0, 400);
   
 	//ensure spool is not moving
-	pwm.setPWM(SPOOL_SERVO, 0, 374);
-	pwm.setPWM(CARRIAGE_SERVO, 0, 364);
+	pwm.setPWM(SPOOL_SERVO, 0, 373);
+	pwm.setPWM(CARRIAGE_SERVO, 0, 367);
 	
 	delay(1000);
 	Serial.println("READY");
