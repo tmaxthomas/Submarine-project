@@ -79,21 +79,23 @@ namespace JoystickProgram{
             thread1.Start();
 
         }
-        
-        void Window1_Loaded(object sender, RoutedEventArgs e){
 
-            timer = new DispatcherTimer();
-            timer.Tick += new EventHandler(dispatcherTimer_Tick);
-            timer.Interval = new TimeSpan(0, 0, 0, 0, 250);
-            timer.Start();
-        }
+		void Window1_Loaded(object sender, RoutedEventArgs e)
+		{
+
+			timer = new DispatcherTimer(DispatcherPriority.Send);
+			timer.Tick += new EventHandler(dispatcherTimer_Tick);
+			timer.Interval = new TimeSpan(0, 0, 0, 0, 50);
+			timer.Start();
+
+		}
         
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
             updateFrame();
         }
 
         public void updateFrame() {
-            SpoolFeedbackSlider.Value = spoolPosition;
+			SpoolFeedbackSlider.Value = spoolPosition;
             BallastFeedbackSlider.Value = ballastPosition;
             AftDiveSlider.Value = aftDivePosition;
             ForeDiveSlider.Value = foreDivePosition;
@@ -116,7 +118,7 @@ namespace JoystickProgram{
 
         }
 
-        public void runningThread(){
+		public void runningThread(){
 
             while (!isEnabled) ;
 
@@ -154,7 +156,9 @@ namespace JoystickProgram{
             catch{
                 isEnabled = false;
             }
+
 			Thread.Sleep(500);
+
             while (true){
                 if (isEnabled){
                     joystick.Poll();
@@ -341,4 +345,5 @@ namespace JoystickProgram{
  
         }
     }
+
 }
