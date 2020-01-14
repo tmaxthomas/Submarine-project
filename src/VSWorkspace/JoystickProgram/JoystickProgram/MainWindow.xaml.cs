@@ -62,6 +62,11 @@ namespace JoystickProgram{
         Byte waterSense = 0;
         Byte batteryVoltage = 0;
 
+		bool isWaterDetected = false;
+		int waterCounter = 0;
+		bool floodingLabelState = true;
+		int floodFlashThreshhold = 7;
+
 		Byte[] tempData = new byte[50];
 
 		public MainWindow(){
@@ -116,6 +121,26 @@ namespace JoystickProgram{
 				EStopLabel.Visibility = Visibility.Visible;
 			}
 
+			if (waterSense > 0){
+				isWaterDetected = true;
+			}
+
+			if(isWaterDetected && floodingLabelState && waterCounter < floodFlashThreshhold){
+				FloodingBox.Visibility = Visibility.Visible;
+				waterCounter++;
+			}
+			else if(isWaterDetected && floodingLabelState && waterCounter == floodFlashThreshhold){
+				floodingLabelState = false;
+				waterCounter = 0;
+			}
+			else if(isWaterDetected && !floodingLabelState && waterCounter < floodFlashThreshhold){
+				FloodingBox.Visibility = Visibility.Hidden;
+				waterCounter++;
+			}
+			else if(isWaterDetected && !floodingLabelState && waterCounter == floodFlashThreshhold){
+				floodingLabelState = true;
+				waterCounter = 0;
+			}
         }
 
 		public void runningThread(){
@@ -160,10 +185,11 @@ namespace JoystickProgram{
 			Thread.Sleep(500);
 
             while (true){
-                if (isEnabled){
-                    joystick.Poll();
-                    var datas = joystick.GetBufferedData();
-                    /*
+				if (isEnabled)
+				{
+					joystick.Poll();
+					var datas = joystick.GetBufferedData();
+					/*
                      *  RawOffset - Button or Axis
                      *      X: 0
                      *      Y: 4
@@ -171,115 +197,129 @@ namespace JoystickProgram{
                      *      ButtonTrigger: 48
                      *  Value - the value of the axis or button (axis are uint16_t, buttons are 128 when pressed, 0 when released)
                      */
-                    foreach (var state in datas){
+					foreach (var state in datas)
+					{
 
-                        //X Change - Rudder
-                        if (state.RawOffset == 0){
-                            rudderSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                        }
+						//X Change - Rudder
+						if (state.RawOffset == 0)
+						{
+							rudderSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
+						}
 
-                        //Y Change - Dive Angle
-                        else if (state.RawOffset == 4){
-                            foreDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
-                            aftDiveSetpoint = (SByte)(-1 * foreDiveSetpoint);
+						//Y Change - Dive Angle
+						else if (state.RawOffset == 4)
+						{
+							foreDiveSetpoint = (SByte)(((state.Value - 32768) * -1) / 500);
+							aftDiveSetpoint = (SByte)(-1 * foreDiveSetpoint);
 
-                        }
+						}
 
-                        //Z Change - Throttle
-                        else if (state.RawOffset == 8){
-                            driveSetpoint = (SByte)((state.Value - 32768) / 500);
-                        }
+						//Z Change - Throttle
+						else if (state.RawOffset == 8)
+						{
+							driveSetpoint = (SByte)((state.Value - 32768) / 500);
+						}
 
-                        //Extra Axis - Spool (light up knob on the side of throttle)
-                        else if (state.RawOffset == 12){
-                            spoolSetpoint = (UInt16)(state.Value / 94);
-                        }
+						//Extra Axis - Spool (light up knob on the side of throttle)
+						else if (state.RawOffset == 12)
+						{
+							spoolSetpoint = (UInt16)(state.Value / 94);
+						}
 
-                        //Extra Axis - Ballast (light up knob on top of throttle)
-                        else if (state.RawOffset == 16){
-                            ballastSetpoint = (UInt16)(state.Value / 180);
-                        }
+						//Extra Axis - Ballast (light up knob on top of throttle)
+						else if (state.RawOffset == 16)
+						{
+							ballastSetpoint = (UInt16)(state.Value / 180);
+						}
 
-                        //Button - headlights
-                        else if (state.RawOffset == 48){
-                            if (state.Value == 128){
-                                if (headlightSwitch){
-                                    headLightSetpoint = 100;
-                                    headlightSwitch = false;
-                                }
-                                else{
-                                    headLightSetpoint = 0;
-                                    headlightSwitch = true;
-                                }
-                            }
-                        }
+						//Button - headlights
+						else if (state.RawOffset == 48)
+						{
+							if (state.Value == 128)
+							{
+								if (headlightSwitch)
+								{
+									headLightSetpoint = 100;
+									headlightSwitch = false;
+								}
+								else
+								{
+									headLightSetpoint = 0;
+									headlightSwitch = true;
+								}
+							}
+						}
 
-						else if (state.RawOffset == 49){
+						else if (state.RawOffset == 49)
+						{
 							isEStop = true;
 						}
 
-                    }
+					}
 
-                    //Serial Data Transmit
-                    if (serialTransmitCounter == 5){
-                        Byte[] stationPacket = new byte[10];
+					//Serial Data Transmit
+					if (serialTransmitCounter == 5)
+					{
+						Byte[] stationPacket = new byte[10];
 
-                        stationPacket[0] = (Byte)driveSetpoint;
-                        stationPacket[1] = (Byte)rudderSetpoint;
-                        stationPacket[2] = (Byte)aftDiveSetpoint;
-                        stationPacket[3] = (Byte)foreDiveSetpoint;
-                        stationPacket[4] = headLightSetpoint;
-                        stationPacket[5] = (Byte)(spoolSetpoint >> 8);
-                        stationPacket[6] = (Byte)(spoolSetpoint);
-                        stationPacket[7] = (Byte)(ballastSetpoint >> 8);
-                        stationPacket[8] = (Byte)(ballastSetpoint);
-						if (isEStop){
+						stationPacket[0] = (Byte)driveSetpoint;
+						stationPacket[1] = (Byte)rudderSetpoint;
+						stationPacket[2] = (Byte)aftDiveSetpoint;
+						stationPacket[3] = (Byte)foreDiveSetpoint;
+						stationPacket[4] = headLightSetpoint;
+						stationPacket[5] = (Byte)(spoolSetpoint >> 8);
+						stationPacket[6] = (Byte)(spoolSetpoint);
+						stationPacket[7] = (Byte)(ballastSetpoint >> 8);
+						stationPacket[8] = (Byte)(ballastSetpoint);
+						if (isEStop)
+						{
 							stationPacket[9] = (Byte)30;
 						}
-						else{
+						else
+						{
 							stationPacket[9] = (Byte)10;
 						}
 
-                        SerialPort1.Write(stationPacket, 0, stationPacket.Length);
-                        serialTransmitCounter = 0;
-                    }
+						SerialPort1.Write(stationPacket, 0, stationPacket.Length);
+						serialTransmitCounter = 0;
+					}
 
-                    serialTransmitCounter++;
-                    
-                    if (SerialPort1.BytesToRead != 0){
-                        serialReceiveDelayCounter++;
-                    }
-                    
-                    if (serialReceiveDelayCounter == 2){
+					serialTransmitCounter++;
+
+					if (SerialPort1.BytesToRead != 0)
+					{
+						serialReceiveDelayCounter++;
+					}
+
+					if (serialReceiveDelayCounter == 2)
+					{
 
 
-                        if (SerialPort1.BytesToRead == 10){
+						if (SerialPort1.BytesToRead == 10)
+						{
 
-                            Byte[] subPacket = new byte[10];
-							String subPacketString = "";
+							Byte[] subPacket = new byte[10];
 
-                            for(int i = 0; i < subPacket.Length; i++) {
-                                subPacket[i] = (Byte)SerialPort1.ReadByte();
-								subPacketString += subPacket[i].ToString() + " ";
-                            }
+							for (int i = 0; i < subPacket.Length; i++)
+							{
+								subPacket[i] = (Byte)SerialPort1.ReadByte();
 
-							Console.WriteLine(subPacketString);
-							
-                            rudderPosition = (SByte)subPacket[0];
-                            aftDivePosition = (SByte)subPacket[1];
-                            foreDivePosition = (SByte)subPacket[2];
-                            spoolPosition = (UInt16)subPacket[3];
-                            spoolPosition = (UInt16)(spoolPosition << 8);
-                            spoolPosition = (UInt16)(spoolPosition | (UInt16)subPacket[4]);
-                            ballastPosition = (UInt16)subPacket[5];
-                            ballastPosition = (UInt16)(ballastPosition << 8);
-                            ballastPosition = (UInt16)(ballastPosition | (UInt16)subPacket[6]);
-                            motorTemp = subPacket[7];
-                            waterSense = subPacket[8];
-                            batteryVoltage = subPacket[9];
-                            //need subPacketCHeck implementation
-							
-                        }
+							}
+
+							rudderPosition = (SByte)subPacket[0];
+							aftDivePosition = (SByte)subPacket[1];
+							foreDivePosition = (SByte)subPacket[2];
+							spoolPosition = (UInt16)subPacket[3];
+							spoolPosition = (UInt16)(spoolPosition << 8);
+							spoolPosition = (UInt16)(spoolPosition | (UInt16)subPacket[4]);
+							ballastPosition = (UInt16)subPacket[5];
+							ballastPosition = (UInt16)(ballastPosition << 8);
+							ballastPosition = (UInt16)(ballastPosition | (UInt16)subPacket[6]);
+							motorTemp = subPacket[7];
+							waterSense = subPacket[8];
+							batteryVoltage = subPacket[9];
+
+						}
 						/*
                         else if((SerialPort1.BytesToRead % 10) == 0) {
                             int discardBytes = SerialPort1.BytesToRead - 10;
@@ -308,18 +348,18 @@ namespace JoystickProgram{
 
                         }
 						*/
-                        else {
-                            SerialPort1.DiscardInBuffer();
-                        }
+						else
+						{
+							SerialPort1.DiscardInBuffer();
+						}
 
-                         
-                        serialReceiveDelayCounter = 0;
 
-                    }
-					
-                    
-                }
+						serialReceiveDelayCounter = 0;
 
+					}
+
+
+				}
                 Thread.Sleep(10);
             }
             
