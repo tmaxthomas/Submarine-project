@@ -229,7 +229,7 @@ namespace JoystickProgram{
 						//Extra Axis - Ballast (light up knob on top of throttle)
 						else if (state.RawOffset == 16)
 						{
-							ballastSetpoint = (UInt16)(state.Value / 180);
+							ballastSetpoint = (UInt16)((state.Value-13108) / 180);
 						}
 
 						//Button - headlights
@@ -384,6 +384,6 @@ namespace JoystickProgram{
             HeadlightsCheckbox.IsEnabled = true;
  
         }
-    }
+	}
 
 }

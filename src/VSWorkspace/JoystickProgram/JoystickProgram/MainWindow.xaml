@@ -37,7 +37,7 @@
         <Label x:Name="WaterSensorLabel" Content="Water Sensor" Grid.Column="1" HorizontalAlignment="Left" Height="40" Margin="10,191,0,0" VerticalAlignment="Top" Width="88"/>
         <Label x:Name="MotorTempLabel" Content="Motor Temp" Grid.Column="1" HorizontalAlignment="Left" Height="30" Margin="10,504,0,0" VerticalAlignment="Top" Width="77"/>
         <Slider x:Name="AftDiveSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="10,347,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
-        <Slider x:Name="BatteryVoltageSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="10,413,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="125" RenderTransformOrigin="-0.897,8.75"/>
+        <Slider x:Name="BatteryVoltageSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="10,413,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="125" RenderTransformOrigin="-0.897,8.75" ValueChanged="BatteryVoltageSlider_ValueChanged"/>
         <Slider x:Name="BallastFeedbackSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="10,477,0,0" VerticalAlignment="Top" Width="145" Maximum="365" IsEnabled="False"/>
         <Slider x:Name="MotorTempSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="11,534,0,0" VerticalAlignment="Top" Width="145" IsEnabled="False" Maximum="100"/>
         <Slider x:Name="ForeDiveSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="10,92,0,0" VerticalAlignment="Top" Width="145" Maximum="100" Minimum="-100" IsEnabled="False"/>
