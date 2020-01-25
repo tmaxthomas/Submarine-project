@@ -99,7 +99,7 @@ const uint16_t BAUD_RATE = 					9600;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  10;
 const uint8_t SENSORS_UPDATE_COUNT =		10;
 const uint8_t CONTROL_UPDATE_COUNT = 		3;
-const uint16_t THREAD_FREQ = 				500;
+const uint8_t THREAD_FREQ = 				1;
 
 /*************
 * PWM LIMITS *
@@ -266,11 +266,11 @@ void loop() {
 		//Read the serial data
 		for(int i = 0; i < STATION_PACKET_SIZE; i++){
 			currentStationData[i] = Serial1.read();
-			Serial.print(currentStationData[i]);
-			Serial.print(" ");
+		//	Serial.print(currentStationData[i]);
+		//	Serial.print(" ");
 		}
     
-		Serial.println("");
+		//Serial.println("");
     
 		if(currentStationData[9] == 10){
 			
@@ -510,7 +510,7 @@ void loop() {
 	updateControlCounter++;
 	
 	//and the delay:
-	delayMicroseconds(THREAD_FREQ);
+	delay(THREAD_FREQ);
 	
 }
 /*
