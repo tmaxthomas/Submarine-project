@@ -99,14 +99,14 @@ const uint16_t BAUD_RATE = 					9600;
 const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  10;
 const uint8_t SENSORS_UPDATE_COUNT =		10;
 const uint8_t CONTROL_UPDATE_COUNT = 		3;
-const uint8_t THREAD_FREQ = 				1;
+const uint16_t THREAD_FREQ = 				500;
 
 /*************
 * PWM LIMITS *
 *************/
 //Carriage. PWM below Center sends carriage towards aft. 
 const uint16_t CARRIAGE_MIN = 		330;
-const uint16_t CARRIAGE_CENTER =  	367;
+const uint16_t CARRIAGE_CENTER =  	366;
 const uint16_t CARRIAGE_MAX	=		396;
 
 //Spool. PWM below Center Spools out the tether
@@ -472,7 +472,7 @@ void loop() {
 		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
 		motorTempCurrent *= -1;
 		
-		if(analogRead(WATER_SENSE) < 1000){
+		if(analogRead(WATER_SENSE) < 900){
 			waterSenseCurrent = 100;
 		}
 		else{
@@ -510,7 +510,7 @@ void loop() {
 	updateControlCounter++;
 	
 	//and the delay:
-	delay(THREAD_FREQ);
+	delayMicroseconds(THREAD_FREQ);
 	
 }
 /*
