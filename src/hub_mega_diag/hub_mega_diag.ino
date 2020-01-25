@@ -472,7 +472,7 @@ void loop() {
 		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
 		motorTempCurrent *= -1;
 		
-		if(analogRead(WATER_SENSE) < 800){
+		if(analogRead(WATER_SENSE) < 1000){
 			waterSenseCurrent = 100;
 		}
 		else{
