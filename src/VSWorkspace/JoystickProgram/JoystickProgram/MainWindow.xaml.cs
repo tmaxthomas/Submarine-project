@@ -82,6 +82,7 @@ namespace JoystickProgram{
             
             Thread thread1 = new Thread(runningThread);
             thread1.Start();
+			
 
         }
 
@@ -92,7 +93,7 @@ namespace JoystickProgram{
 			timer.Tick += new EventHandler(dispatcherTimer_Tick);
 			timer.Interval = new TimeSpan(0, 0, 0, 0, 50);
 			timer.Start();
-
+			
 		}
         
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
@@ -125,6 +126,11 @@ namespace JoystickProgram{
 				isWaterDetected = true;
 			}
 
+			/*if (isWaterDetected)
+			{
+				FloodingBox.Visibility = Visibility.Visible;
+			}*/
+			
 			if(isWaterDetected && floodingLabelState && waterCounter < floodFlashThreshhold){
 				FloodingBox.Visibility = Visibility.Visible;
 				waterCounter++;
@@ -297,13 +303,13 @@ namespace JoystickProgram{
 
 						if (SerialPort1.BytesToRead == 10)
 						{
-
+							//SerialBox.Text = "test";
 							Byte[] subPacket = new byte[10];
 
 							for (int i = 0; i < subPacket.Length; i++)
 							{
 								subPacket[i] = (Byte)SerialPort1.ReadByte();
-
+							//	SerialBox.Text = subPacket[i] + " ";
 							}
 
 							rudderPosition = (SByte)subPacket[0];
