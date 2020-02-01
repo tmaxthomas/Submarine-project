@@ -110,7 +110,7 @@ void loop(){
 	if(!isValidPacket){
 		while(Serial.available() != 0){
 			Serial.read();
-			delayMicroseconds(300);
+			//delayMicroseconds(300);
 		}
 		isValidPacket = true;
 	}
@@ -177,5 +177,5 @@ void loop(){
 		Serial.write(currentSubData, SUB_PACKET_SIZE);
 		
 	}
-	delayMicroseconds(200);
+	//delayMicroseconds(200);
 }

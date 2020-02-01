@@ -62,6 +62,7 @@ namespace JoystickProgram{
         Byte waterSense = 0;
         Byte batteryVoltage = 0;
 
+		int subPacketOffset = 0;
 		bool isWaterDetected = false;
 		int waterCounter = 0;
 		bool floodingLabelState = true;
@@ -118,12 +119,19 @@ namespace JoystickProgram{
             HeadlightsCheckbox.IsChecked = !headlightSwitch;
 			SerialBox.Text = batteryVoltage.ToString();
 
+			SubPacketOffsetBox.Text = subPacketOffset.ToString();
+
 			if (isEStop){
 				EStopLabel.Visibility = Visibility.Visible;
 			}
 
 			if (waterSense > 0){
 				isWaterDetected = true;
+			}
+
+			if (!isWaterDetected)
+			{
+				FloodingBox.Visibility = Visibility.Hidden;
 			}
 
 			/*if (isWaterDetected)
@@ -306,10 +314,43 @@ namespace JoystickProgram{
 							//SerialBox.Text = "test";
 							Byte[] subPacket = new byte[10];
 
+							String subPacketString = "";
+
 							for (int i = 0; i < subPacket.Length; i++)
 							{
 								subPacket[i] = (Byte)SerialPort1.ReadByte();
-							//	SerialBox.Text = subPacket[i] + " ";
+								subPacketString += subPacket[i].ToString() + " ";
+								//	SerialBox.Text = subPacket[i] + " ";
+							}
+							Console.Write("Sub Packet: ");
+							Console.WriteLine(subPacketString);
+
+							if(subPacketOffset > 0 && subPacketOffset < 10)
+							{
+								Byte[] tempSubPacket = new byte[10];
+								String tempSubPacketString = "";
+								for (int i = 0; i < subPacket.Length; i++)
+								{
+									if(i + subPacketOffset < 10 && i + subPacketOffset > -1)
+									{
+										tempSubPacket[i] = subPacket[i + subPacketOffset];
+										tempSubPacketString += tempSubPacket[i].ToString() + " ";
+									}
+									else if(i + subPacketOffset > 9)
+									{
+										tempSubPacket[i] = subPacket[(i + subPacketOffset) - 10];
+										tempSubPacketString += tempSubPacket[i].ToString() + " ";
+									}
+
+								}
+								Console.Write("Temp Sub Packet: ");
+								Console.WriteLine(tempSubPacketString);
+								Console.WriteLine();
+
+								for (int i = 0; i < subPacket.Length; i++)
+								{
+									subPacket[i] = tempSubPacket[i];
+								}
 							}
 
 							rudderPosition = (SByte)subPacket[0];
@@ -390,6 +431,26 @@ namespace JoystickProgram{
             HeadlightsCheckbox.IsEnabled = true;
  
         }
+
+		private void SubPacketUpOffset_Click(object sender, RoutedEventArgs e)
+		{
+			subPacketOffset++;
+			if(subPacketOffset > 9)
+			{
+				subPacketOffset = 9;
+			}
+			isWaterDetected = false;
+		}
+
+		private void SubPacketDownOffset_Click(object sender, RoutedEventArgs e)
+		{
+			subPacketOffset--;
+			if(subPacketOffset < 0)
+			{
+				subPacketOffset = 0;
+			}
+			isWaterDetected = false;
+		}
 	}
 
 }

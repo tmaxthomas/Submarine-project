@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JoystickProgram"
         mc:Ignorable="d"
-        Title="Submarine Control Program" Height="683.667" Width="496.667">
+        Title="Submarine Control Program" Height="683.667" Width="526.667">
     <Grid Margin="0,0,2,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="20*"/>
@@ -13,16 +13,16 @@
             <ColumnDefinition Width="20*"/>
         </Grid.ColumnDefinitions>
         <Label Content="SUBMARINE CONTROL PROGRAM" HorizontalAlignment="Left" Height="36" VerticalAlignment="Top" Width="297" FontSize="18" Grid.ColumnSpan="2"/>
-        <Button x:Name="StartSerial" Content="Serial" Grid.Column="1" HorizontalAlignment="Left" Height="26" Margin="378,12,0,0" VerticalAlignment="Top" Width="85" Click="SerialButton_Click" RenderTransformOrigin="0.847,0.538"/>
-        <Label x:Name="SetpointDataLabel" Content="Setpoint Data From Joystick" Grid.Column="1" HorizontalAlignment="Left" Height="35" Margin="224,57,0,0" VerticalAlignment="Top" Width="239"/>
+        <Button x:Name="StartSerial" Content="Serial" Grid.Column="1" HorizontalAlignment="Left" Height="26" Margin="392,12,0,0" VerticalAlignment="Top" Width="85" Click="SerialButton_Click" RenderTransformOrigin="0.847,0.538"/>
+        <Label x:Name="SetpointDataLabel" Content="Setpoint Data From Joystick" Grid.Column="1" HorizontalAlignment="Left" Height="35" Margin="224,71,0,0" VerticalAlignment="Top" Width="239"/>
         <Label x:Name="FeedbackDataLabel" Content="Feedback Data from Submarine" Grid.Column="1" HorizontalAlignment="Left" Height="24" Margin="0,36,0,0" VerticalAlignment="Top" Width="224"/>
         <Border BorderBrush="Black" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="523" Margin="208,41,0,0" VerticalAlignment="Top" Width="2"/>
-        <Slider x:Name="ThrottleSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="29" Margin="224,107,0,0" VerticalAlignment="Top" Width="198" Panel.ZIndex="2" Minimum="-100" Maximum="100" IsEnabled="False"/>
+        <Slider x:Name="ThrottleSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="29" Margin="224,117,0,0" VerticalAlignment="Top" Width="198" Panel.ZIndex="2" Minimum="-100" Maximum="100" IsEnabled="False"/>
         <Slider x:Name="BallastSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="224,320,0,0" VerticalAlignment="Top" Width="198" Maximum="365" IsEnabled="False"/>
         <Slider x:Name="DiveAngleSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="224,172,0,0" VerticalAlignment="Top" Width="198" Maximum="100" Minimum="-100" IsEnabled="False"/>
         <Slider x:Name="SpoolSetpointSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="224,396,0,0" VerticalAlignment="Top" Width="198" Maximum="700" IsEnabled="False"/>
         <Slider x:Name="RudderAngleSlider" Grid.Column="1" HorizontalAlignment="Left" Height="20" Margin="224,247,0,0" VerticalAlignment="Top" Width="198" Maximum="100" Minimum="-100" IsEnabled="False"/>
-        <Label x:Name="ThrottleLabel" Content="Throttle" Grid.Column="1" HorizontalAlignment="Left" Height="31" Margin="224,81,0,0" VerticalAlignment="Top" Width="54" RenderTransformOrigin="0.51,-0.538"/>
+        <Label x:Name="ThrottleLabel" Content="Throttle" Grid.Column="1" HorizontalAlignment="Left" Height="31" Margin="224,92,0,0" VerticalAlignment="Top" Width="54" RenderTransformOrigin="0.51,-0.538"/>
         <Label x:Name="DiveAngleLabel" Content="Dive Angle" Grid.Column="1" HorizontalAlignment="Left" Height="31" Margin="224,141,0,0" VerticalAlignment="Top" Width="80"/>
         <Label x:Name="RudderSetpointLabel" Content="Rudder" Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="224,218,0,0" VerticalAlignment="Top" Width="54"/>
         <Label x:Name="BallastSetpointLabel" Content="Ballast" Grid.Column="1" HorizontalAlignment="Left" Height="26" Margin="224,289,0,0" VerticalAlignment="Top" Width="67"/>
@@ -49,6 +49,10 @@
         <Label x:Name="EStopLabel" Content="ESTOP" Grid.Column="1" HorizontalAlignment="Left" Height="55" Margin="50,574,0,0" VerticalAlignment="Top" Width="101" FontSize="30" FontWeight="Bold" Background="#FFF10404" Visibility="Hidden" />
         <TextBox x:Name="SerialBox" Grid.Column="1" HorizontalAlignment="Left" Height="65" Margin="224,469,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="156" RenderTransformOrigin="0.519,0.419"/>
         <TextBox x:Name="FloodingBox" Grid.Column="1" HorizontalAlignment="Left" Height="54" Margin="208,575,0,0" TextWrapping="Wrap" Text="FLOODING" VerticalAlignment="Top" Width="198" FontSize="36" Background="#FFC11010" Visibility="Hidden" />
+        <Button x:Name="SubPacketUpOffset" Content="Up" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="423,45,0,0" VerticalAlignment="Top" Width="54" Click="SubPacketUpOffset_Click"/>
+        <Button x:Name="SubPacketDownOffset" Content="Down" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="337,45,0,0" VerticalAlignment="Top" Width="57" Click="SubPacketDownOffset_Click"/>
+        <Label x:Name="SubPacketIncrementLabel" Content="Sub Packet Increment:" Grid.Column="1" HorizontalAlignment="Left" Margin="210,42,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="SubPacketOffsetBox" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="399,45,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="19" RenderTransformOrigin="0.684,0.857"/>
 
     </Grid>
 </Window>
