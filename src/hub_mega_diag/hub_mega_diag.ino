@@ -472,13 +472,13 @@ void loop() {
 		motorTempCurrent = analogRead(MOTOR_TEMP_SENSE) - MOTOR_TEMP_SENSE_CENTER;
 		motorTempCurrent *= -1;
 		
-		if(analogRead(WATER_SENSE) < 900){
+		if(analogRead(WATER_SENSE) < 800){
 			waterSenseCurrent = 100;
 		}
-		else{
+		/*else{
 			waterSenseCurrent = 0;
 		}
-		
+		*/
 		batteryVoltage = (uint8_t)(analogRead(BATTERY_VOLTAGE_SENSE) - BATTERY_VOLTAGE_SENSE_CENTER);
 		
 		rudderPositionCurrent *= -1;
