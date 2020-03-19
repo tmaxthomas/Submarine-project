@@ -187,7 +187,7 @@ uint8_t motorTempCurrent = 			0;
 uint8_t waterSenseCurrent = 		0;
 uint8_t batteryVoltage = 			0; 
 
-const uint8_t SUB_PACKET_SIZE = 	11;
+const uint8_t SUB_PACKET_SIZE = 	10;
 byte currentSubData[SUB_PACKET_SIZE];
 
 /**************************

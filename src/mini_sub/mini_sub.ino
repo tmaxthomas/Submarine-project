@@ -50,7 +50,7 @@ struct SubPacket{
 	uint8_t motorTemp;
 	uint8_t waterSense;
 	uint8_t batteryVoltage;
-	uint8_t subPacketCheck;
+	//uint8_t subPacketCheck;
 	
 };
 
@@ -61,7 +61,7 @@ Variables holding the latest received operational data from the sub.
 Assigned to and transmitted by ack packets.
 */
 
-const uint8_t SUB_PACKET_SIZE = 	11;
+const uint8_t SUB_PACKET_SIZE = 	10;
 byte currentSubData[SUB_PACKET_SIZE];
 int8_t rudderPositionCurrent = 		0;
 int8_t aftDivePositionCurrent = 	0;
@@ -71,7 +71,7 @@ uint16_t ballastPositionCurrent = 	0;
 uint8_t motorTempCurrent = 			0;
 uint8_t waterSenseCurrent = 		0;
 uint8_t batteryVoltageCurrent = 	0;
-uint8_t subPacketCheckCurrent = 	20;
+//uint8_t subPacketCheckCurrent = 	20;
 
 /*Current Station Setpoint Data
 Variables holding the latest received setpoint data from the base station.
@@ -110,7 +110,7 @@ void loop(){
 		motorTempCurrent = currentSubData[7];
 		waterSenseCurrent = currentSubData[8];
 		batteryVoltageCurrent = currentSubData[9];
-		subPacketCheckCurrent = currentSubData[10];
+		//subPacketCheckCurrent = currentSubData[10];
 		
 		//At this point, the 'current' vars contain the latest values
 	}
@@ -148,10 +148,10 @@ void loop(){
 		subData.motorTemp = motorTempCurrent;
 		subData.waterSense = waterSenseCurrent;
 		subData.batteryVoltage = batteryVoltageCurrent;
-		subData.subPacketCheck = subPacketCheckCurrent;
+		//subData.subPacketCheck = subPacketCheckCurrent;
 		
 		_radio.addAckData(&subData, sizeof(subData));
 	}
 	
-	delayMicroseconds(200);
+	//delayMicroseconds(200);
 }
