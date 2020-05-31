@@ -100,7 +100,6 @@ const uint8_t SPOOL_BALLAST_UPDATE_COUNT =  10;
 const uint8_t SENSORS_UPDATE_COUNT =		10;
 const uint8_t CONTROL_UPDATE_COUNT = 		3;
 const uint16_t THREAD_FREQ = 				500;
-const uint16_t SERIAL_TIMEOUT = 			40000;	
 
 /*************
 * PWM LIMITS *
@@ -215,9 +214,6 @@ uint8_t updateControlCounter = 		0;
 int8_t spoolBusLastState = 			0;
 int8_t ballastBusLastState = 		0;
 int8_t carriageBusLastState = 		0;
-
-uint16_t serialTimeoutCounter = 	0;
-
 
 //carriage position not sent over serial, so its here in globals
 uint16_t carriagePositionCurrent = 	0;
@@ -338,7 +334,6 @@ void loop() {
 			Serial1.write(currentSubData, SUB_PACKET_SIZE);
 		
 			isUpdated = true;
-			serialTimeoutCounter = 0;
 			
 		}
 		else if(currentStationData[9] == 30){
@@ -363,15 +358,10 @@ void loop() {
 			}
 		}
 	}
-	//if the serial buffer is overflowed
 	else if(Serial1.available() > STATION_PACKET_SIZE){
 		while(Serial1.read() != -1){};
 	}
-	//enter this loop if no new correct serial packets received within time limit
-	//trigger auto surface
-	if(serialTimeoutCounter > SERIAL_TIMEOUT){
-		
-	}
+	
 	//Update the setpoints if new data has been received:
 	if(isUpdated){
 		/*
@@ -518,9 +508,6 @@ void loop() {
 	updateSpoolBallastCounter++;
 	updateSensorsCounter++;
 	updateControlCounter++;
-	
-	//serialTimeoutCounter: increments on each loop. Resets only when correct packets received. 
-	serialTimeoutCounter++;
 	
 	//and the delay:
 	delayMicroseconds(THREAD_FREQ);
